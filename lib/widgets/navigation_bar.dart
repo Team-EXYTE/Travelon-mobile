@@ -16,8 +16,16 @@ class _TravelonNavBarState extends State<TravelonNavBar> {
     setState(() {
       _selectedIndex = index;
     });
+    if (index == 2) {
+      // Map icon tapped
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const OpenStreetMapScreen()),
+      );
+    }
 
-    if (index == 3) { // Profile tab
+    if (index == 3) {
+      // Profile tab
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => const UserProfilePage()),
@@ -35,16 +43,6 @@ class _TravelonNavBarState extends State<TravelonNavBar> {
       backgroundColor: Colors.black,
       showSelectedLabels: false,
       showUnselectedLabels: false,
-      onTap: (index) {
-        if (index == 2) {
-          // Map icon tapped
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const OpenStreetMapScreen()),
-          );
-        }
-        // You can add similar handlers for Home, Cart, Profile if needed
-      },
       currentIndex: _selectedIndex,
       onTap: _onItemTapped,
       items: const [
