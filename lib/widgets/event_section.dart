@@ -63,7 +63,7 @@ Widget _eventCard(BuildContext context, String imagePath, String title, String p
         : [
             {'image': 'assets/event1.jpeg', 'title': 'Batik Workshop', 'price': '\$10.99'},
             {'image': 'assets/event2.jpg', 'title': 'Cooking Class', 'price': '\$21.99'},
-            {'image': 'assets/event3.avif', 'title': 'Sightseeing', 'price': '\$14.99'},
+            {'image': 'assets/event3.jpg', 'title': 'Sightseeing', 'price': '\$14.99'},
             {'image': 'assets/event5.jpg', 'title': 'Dalada Perahera', 'price': '\$16.99'},
             {'image': 'assets/event4.webp', 'title': 'Kohomba kankariya', 'price': '\$5.99'},
             {'image': 'assets/event6.jpg', 'title': 'Thaipongal', 'price': '\$8.99'},

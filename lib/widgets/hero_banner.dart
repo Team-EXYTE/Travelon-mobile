@@ -21,7 +21,7 @@ class HeroBanner extends StatelessWidget {
             Container(
               width: double.infinity,
               padding: EdgeInsets.all(12),
-              color: Colors.black.withOpacity(0.5),
+              color: Colors.black.withValues(alpha: 0.5),
               child: Text(
                 'Kandy Perahera\nThe Kandy perahera is a grand Buddhist festival in Sri Lanka...',
                 style: TextStyle(color: Colors.white),
