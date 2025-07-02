@@ -1,8 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:travelon_mobile/screens/map_screen.dart';
+import '../screens/profile_screen.dart'; // Import your profile screen
 
-class TravelonNavBar extends StatelessWidget {
+class TravelonNavBar extends StatefulWidget {
   const TravelonNavBar({super.key});
+
+  @override
+  State<TravelonNavBar> createState() => _TravelonNavBarState();
+}
+
+class _TravelonNavBarState extends State<TravelonNavBar> {
+  int _selectedIndex = 0;
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+
+    if (index == 3) { // Profile tab
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const UserProfilePage()),
+      );
+    }
+    // You can add navigation for other tabs here if needed
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,6 +45,8 @@ class TravelonNavBar extends StatelessWidget {
         }
         // You can add similar handlers for Home, Cart, Profile if needed
       },
+      currentIndex: _selectedIndex,
+      onTap: _onItemTapped,
       items: const [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
         BottomNavigationBarItem(icon: Icon(Icons.shopping_cart), label: 'Cart'),
