@@ -156,7 +156,7 @@ class UserProfilePage extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     const Text(
-                      'Since 5 January 2025',
+                      'Since 2 January 2025',
                       style: TextStyle(color: Colors.white70, fontSize: 13),
                     ),
                     const SizedBox(height: 10),
