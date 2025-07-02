@@ -4,8 +4,15 @@ import 'settings_screen.dart';
 class UserProfilePage extends StatelessWidget {
   const UserProfilePage({super.key});
 
+  // For demonstration, hardcoded username. Replace with your user variable.
+  final String userName = 'Saman Perera';
+  final String phoneNumber = '+94 77 123 4567';
+
   @override
   Widget build(BuildContext context) {
+    // Get first letter of username, fallback to '?'
+    final String firstLetter = userName.isNotEmpty ? userName[0].toUpperCase() : '?';
+
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
       appBar: AppBar(
@@ -16,7 +23,7 @@ class UserProfilePage extends StatelessWidget {
           style: TextStyle(
             color: Colors.black,
             fontWeight: FontWeight.bold,
-            letterSpacing: 0.5,
+            letterSpacing: 0.3,
           ),
         ),
         centerTitle: true,
@@ -26,7 +33,15 @@ class UserProfilePage extends StatelessWidget {
             child: PopupMenuButton<String>(
               icon: CircleAvatar(
                 radius: 16,
-                backgroundImage: NetworkImage('https://i.pravatar.cc/150?img=3'),
+                backgroundColor: Colors.teal,
+                child: Text(
+                  firstLetter,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
               ),
               onSelected: (value) {
                 if (value == 'settings') {
@@ -72,9 +87,9 @@ class UserProfilePage extends StatelessWidget {
                   value: 'logout',
                   child: Row(
                     children: const [
-                      Icon(Icons.logout, color: Colors.redAccent),
+                      Icon(Icons.logout, color: Colors.teal),
                       SizedBox(width: 10),
-                      Text('Logout', style: TextStyle(fontSize: 16, color: Colors.redAccent)),
+                      Text('Logout', style: TextStyle(fontSize: 16, color: Colors.black)),
                     ],
                   ),
                 ),
@@ -92,7 +107,7 @@ class UserProfilePage extends StatelessWidget {
               width: double.infinity,
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color.fromARGB(255, 0, 0, 0), Color.fromARGB(255, 65, 185, 228)],
+                  colors: [Color.fromARGB(255, 0, 0, 0), Color.fromARGB(255, 86, 199, 240)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -107,13 +122,20 @@ class UserProfilePage extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: 48,
-                      backgroundImage: NetworkImage('https://i.pravatar.cc/150?img=3'),
-                      backgroundColor: Colors.white,
+                      backgroundColor: Colors.teal,
+                      child: Text(
+                        firstLetter,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 40,
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 14),
-                    const Text(
-                      'John Doe',
-                      style: TextStyle(
+                    Text(
+                      userName,
+                      style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -123,12 +145,12 @@ class UserProfilePage extends StatelessWidget {
                     const SizedBox(height: 4),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Icon(Icons.phone, size: 16, color: Colors.white70),
-                        SizedBox(width: 4),
+                      children: [
+                        const Icon(Icons.phone, size: 16, color: Colors.white70),
+                        const SizedBox(width: 4),
                         Text(
-                          '+94 77 123 4567',
-                          style: TextStyle(fontSize: 15, color: Colors.white70),
+                          phoneNumber,
+                          style: const TextStyle(fontSize: 15, color: Colors.white70),
                         ),
                       ],
                     ),
@@ -137,7 +159,25 @@ class UserProfilePage extends StatelessWidget {
                       'Since 5 January 2025',
                       style: TextStyle(color: Colors.white70, fontSize: 13),
                     ),
-                
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.shade700,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 6,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Text(
+                        'Member Gold',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -177,7 +217,7 @@ class UserProfilePage extends StatelessWidget {
                       _ProfileTile(
                         title: 'My Reviews',
                         icon: Icons.star,
-                        color: Colors.amber.shade800,
+                        color: Colors.amber,
                         details: const [
                           {
                             'icon': Icons.star,
