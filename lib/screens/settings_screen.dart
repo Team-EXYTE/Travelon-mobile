@@ -4,86 +4,94 @@ class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   void _showChangePasswordDialog(BuildContext context) {
-    final oldController = TextEditingController();
-    final newController = TextEditingController();
-    final confirmController = TextEditingController();
+  final oldController = TextEditingController();
+  final newController = TextEditingController();
+  final confirmController = TextEditingController();
 
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Change Password'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.teal.shade100),
-              ),
-              child: TextField(
-                controller: oldController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Existing Password',
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Change Password'),
+      content: SingleChildScrollView(
+        child: SizedBox(
+          width: 350,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Small box for existing password
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.teal.shade100),
+                ),
+                child: TextField(
+                  controller: oldController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Existing Password',
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                  ),
                 ),
               ),
-            ),
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.teal.shade100),
-              ),
-              child: TextField(
-                controller: newController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'New Password',
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              // Small box for new password
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.teal.shade100),
+                ),
+                child: TextField(
+                  controller: newController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'New Password',
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                  ),
                 ),
               ),
-            ),
-            Container(
-              margin: const EdgeInsets.symmetric(vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.teal.shade100),
-              ),
-              child: TextField(
-                controller: confirmController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Confirm New Password',
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+              // Small box for confirm password
+              Container(
+                margin: const EdgeInsets.symmetric(vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.teal.shade100),
+                ),
+                child: TextField(
+                  controller: confirmController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Confirm New Password',
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              // Add your password change logic here
-              Navigator.pop(context);
-            },
-            child: const Text('Change'),
-          ),
-        ],
       ),
-    );
-  }
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () {
+            // Add your password change logic here
+            Navigator.pop(context);
+          },
+          child: const Text('Change'),
+        ),
+      ],
+    ),
+  );
+}
 
   Widget sectionTitle(String title) => Container(
         width: double.infinity,
@@ -226,7 +234,7 @@ class SettingsScreen extends StatelessWidget {
                       'Q: Can I book for someone else?\n'
                       'A: Yes, you can enter the traveler’s details during the booking process.\n\n'
                       'Q: How do I contact customer support?\n'
-                      'A: Use the Contact Support option in this menu.\n\n'
+                      'A: Use the Contact Support option in this menu .\n\n'
                       'Q: How do I reset my password?\n'
                       'A: Use the Change Password option in the Account section.\n\n'
                       'Q: How do I delete my Travelon account?\n'
