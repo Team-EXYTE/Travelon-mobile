@@ -34,10 +34,11 @@ class _LoginPageState extends State<LoginPage> {
               key: _formKey,
               child: Column(
                 children: [
-                  Icon(Icons.location_on, size: 50),
-                  SizedBox(height: 12),
-                  Text("Travelon", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-                  SizedBox(height: 8),
+                  Image.asset(
+                  'assets/logoblack.png',
+                  height: 70,
+                ),
+                  SizedBox(height: 16),
                   Text("Welcome back! Please login to your account", textAlign: TextAlign.center),
                   SizedBox(height: 24),
                   TextFormField(
@@ -61,6 +62,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) return 'Please enter your password';
+                      return null;
                     },
                   ),
                   SizedBox(height: 8),
