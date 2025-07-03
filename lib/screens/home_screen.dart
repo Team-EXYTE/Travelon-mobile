@@ -37,14 +37,7 @@ class HomeScreen extends StatelessWidget {
     return AppBar(
       backgroundColor: Colors.black,
       elevation: 0,
-      title: const Text(
-        'TRAVELON',
-        style: TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-          fontSize: 20,
-        ),
-      ),
+      title: Image.asset('assets/logo.png', height: 36, fit: BoxFit.contain),
       centerTitle: false,
       actions: [
         IconButton(
