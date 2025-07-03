@@ -42,8 +42,10 @@ class _SignupPageState extends State<SignupPage> {
               key: _formKey,
               child: Column(
                 children: [
-                  Icon(Icons.person_add_alt_1, size: 50),
-                  SizedBox(height: 12),
+                  Image.asset(
+                'assets/logoblack.png',
+                height: 70,),
+                  SizedBox(height: 8),
                   Text("Create your Travelon account", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                   SizedBox(height: 24),
                   TextFormField(

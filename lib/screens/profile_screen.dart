@@ -15,19 +15,15 @@ class UserProfilePage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'TRAVELON',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 0.3,
-          ),
-        ),
-        centerTitle: true,
-        actions: [
+    appBar: AppBar(
+      backgroundColor: Colors.white,
+      elevation: 0,
+      title: Image.asset(
+        'assets/logoblack.png',
+        height: 40,
+      ),
+      centerTitle: true,
+      actions: [
           Padding(
             padding: const EdgeInsets.only(right: 16.0),
             child: PopupMenuButton<String>(
