@@ -50,7 +50,7 @@ class _EventMapScreenState extends State<EventMapScreen> {
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
+                  color: Colors.grey.withValues(alpha: 0.1),
                   spreadRadius: 1,
                   blurRadius: 4,
                   offset: Offset(0, 2),
@@ -144,7 +144,7 @@ class _EventMapScreenState extends State<EventMapScreen> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
+                    color: Colors.grey.withValues(alpha: 0.1),
                     spreadRadius: 1,
                     blurRadius: 4,
                     offset: Offset(0, 2),
@@ -184,7 +184,7 @@ class _EventMapScreenState extends State<EventMapScreen> {
                               border: Border.all(color: Colors.white, width: 2),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.3),
+                                  color: Colors.black.withValues(alpha: 0.3),
                                   spreadRadius: 1,
                                   blurRadius: 3,
                                   offset: Offset(0, 2),
@@ -213,7 +213,7 @@ class _EventMapScreenState extends State<EventMapScreen> {
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
+              color: Colors.grey.withValues(alpha: 0.1),
               spreadRadius: 1,
               blurRadius: 4,
               offset: Offset(0, -2),

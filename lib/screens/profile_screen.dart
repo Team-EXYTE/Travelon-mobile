@@ -278,7 +278,7 @@ class _ProfileTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ExpansionTile(
       leading: CircleAvatar(
-        backgroundColor: color.withOpacity(0.15),
+        backgroundColor: color.withValues(alpha: 0.15),
         child: Icon(icon, color: color),
       ),
       title: Text(

@@ -10,6 +10,7 @@ class OpenStreetMapScreen extends StatefulWidget {
   const OpenStreetMapScreen({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _OpenStreetMapScreenState createState() => _OpenStreetMapScreenState();
 }
 
@@ -90,7 +91,7 @@ class _OpenStreetMapScreenState extends State<OpenStreetMapScreen> {
           border: Border.all(color: Colors.white, width: 2),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black.withValues(alpha: 0.3),
               spreadRadius: 1,
               blurRadius: 3,
               offset: Offset(0, 2),
@@ -243,7 +244,7 @@ class _OpenStreetMapScreenState extends State<OpenStreetMapScreen> {
                         borderRadius: BorderRadius.circular(8),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withValues(alpha: 0.1),
                             spreadRadius: 1,
                             blurRadius: 4,
                             offset: Offset(0, 2),
@@ -332,7 +333,7 @@ class _OpenStreetMapScreenState extends State<OpenStreetMapScreen> {
                         vertical: 8,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.8),
+                        color: Colors.black.withValues(alpha: 0.8),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
