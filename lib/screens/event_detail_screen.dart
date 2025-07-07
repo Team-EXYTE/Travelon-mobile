@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../data_model/event_model.dart';
 import '../services/event_service.dart';
+import '../services/cart_service.dart';
 import 'event_map_screen.dart';
+import 'checkout_screen.dart';
 
 class EventDetailScreen extends StatelessWidget {
   final String imagePath;
@@ -64,7 +66,7 @@ class EventDetailScreen extends StatelessWidget {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.9),
+                        color: Colors.red.withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Text(
@@ -110,7 +112,7 @@ class EventDetailScreen extends StatelessWidget {
                                 (cat) => cat.name == displayEvent.category,
                               )
                               .color,
-                        ).withOpacity(0.1),
+                        ).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: EventService.getCategoryColor(
@@ -199,58 +201,151 @@ class EventDetailScreen extends StatelessWidget {
                   SizedBox(height: 30),
 
                   // Action Buttons
-                  Row(
-                    children: [
-                      Expanded(
-                        flex: 3,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                displayEvent?.isEnded == true
-                                    ? Colors.grey
-                                    : Colors.black,
-                            padding: EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                  if (displayEvent?.isEnded == true)
+                    // Show ended event message
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        'Event Ended',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                    )
+                  else
+                    // Show Book Now and Add to Cart buttons
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.black,
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
-                          ),
-                          onPressed:
-                              displayEvent?.isEnded == true
-                                  ? null
-                                  : () {
-                                    // Do nothing - button is just visual
-                                  },
-                          child: Text(
-                            displayEvent?.isEnded == true
-                                ? 'Event Ended'
-                                : 'Book Now',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                            onPressed:
+                                displayEvent != null
+                                    ? () {
+                                      // Direct to checkout with single item
+                                      final cartService = CartService();
+                                      cartService.clearCart();
+                                      cartService.addToCart(displayEvent);
+
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder:
+                                              (context) => CheckoutScreen(),
+                                        ),
+                                      );
+                                    }
+                                    : null,
+                            child: Text(
+                              'Book Now',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      SizedBox(width: 12),
-                      Expanded(
-                        flex: 1,
-                        child: OutlinedButton(
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(color: Colors.black),
-                            padding: EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                        SizedBox(width: 12),
+                        Expanded(
+                          flex: 2,
+                          child: OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(color: Colors.black),
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            onPressed:
+                                displayEvent != null
+                                    ? () {
+                                      final cartService = CartService();
+                                      if (cartService.isInCart(
+                                        displayEvent.id,
+                                      )) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              '${displayEvent.title} is already in cart',
+                                            ),
+                                            duration: Duration(seconds: 2),
+                                          ),
+                                        );
+                                      } else {
+                                        cartService.addToCart(displayEvent);
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              '${displayEvent.title} added to cart',
+                                            ),
+                                            duration: Duration(seconds: 2),
+                                            action: SnackBarAction(
+                                              label: 'View Cart',
+                                              onPressed: () {
+                                                Navigator.pushNamed(
+                                                  context,
+                                                  '/cart',
+                                                );
+                                              },
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                    : null,
+                            icon: Icon(
+                              Icons.add_shopping_cart,
+                              color: Colors.black,
+                            ),
+                            label: Text(
+                              'Add to Cart',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
                             ),
                           ),
-                          onPressed: () {
-                            _showContactDialog(context);
-                          },
-                          child: Icon(Icons.phone, color: Colors.black),
                         ),
-                      ),
-                    ],
-                  ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          flex: 1,
+                          child: OutlinedButton(
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(color: Colors.black),
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            onPressed: () {
+                              _showContactDialog(context);
+                            },
+                            child: Icon(Icons.phone, color: Colors.black),
+                          ),
+                        ),
+                      ],
+                    ),
 
                   SizedBox(height: 16),
 
@@ -313,7 +408,7 @@ class EventDetailScreen extends StatelessWidget {
         border: Border.all(color: Colors.grey[200]!),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.05),
+            color: Colors.grey.withValues(alpha: 0.05),
             spreadRadius: 1,
             blurRadius: 4,
             offset: Offset(0, 2),
@@ -325,7 +420,7 @@ class EventDetailScreen extends StatelessWidget {
           Container(
             padding: EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(icon, color: color, size: 20),
