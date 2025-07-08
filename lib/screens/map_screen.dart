@@ -3,7 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import '../data_model/event_model.dart';
-import '../services/event_service.dart';
+import '../services/firebase_service.dart';
 import '../screens/event_detail_screen.dart';
 
 class OpenStreetMapScreen extends StatefulWidget {
@@ -19,13 +19,62 @@ class _OpenStreetMapScreenState extends State<OpenStreetMapScreen> {
   final MapController _mapController = MapController();
   List<Event> _events = [];
   String _currentFilter = 'Upcoming Events'; // Track current filter
+  final FirebaseService _firebaseService =
+      FirebaseService(); // Initialize Firebase service
+  bool _isLoading = true; // Track loading state
 
   @override
   void initState() {
     super.initState();
-    _events =
-        EventService.getUpcomingEvents(); // Show only upcoming events by default
+    _loadEvents();
     _determinePosition();
+  }
+
+  // Load events from Firebase
+  Future<void> _loadEvents() async {
+    setState(() => _isLoading = true);
+
+    try {
+      List<Event> events;
+
+      // Load events based on current filter
+      if (_currentFilter == 'All Events') {
+        events = await _firebaseService.getAllEvents();
+      } else if (_currentFilter == 'Ended Events') {
+        events = await _firebaseService.getEndedEvents();
+      } else {
+        // Default: Upcoming Events
+        events = await _firebaseService.getUpcomingEvents();
+      }
+
+      setState(() {
+        _events = events;
+        _isLoading = false;
+      });
+    } catch (error) {
+      setState(() => _isLoading = false);
+      // If Firebase fetch fails, fallback to mock data
+      _loadMockEvents();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Failed to load events from Firebase. Using local data.',
+          ),
+        ),
+      );
+    }
+  }
+
+  // We don't need mock events anymore, just use empty list
+  Future<void> _loadMockEvents() async {
+    setState(() {
+      _events = [];
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to load events. Please try again later.'),
+        ),
+      );
+    });
   }
 
   Future<void> _determinePosition() async {
@@ -82,19 +131,28 @@ class _OpenStreetMapScreenState extends State<OpenStreetMapScreen> {
           color:
               event.isEnded
                   ? Colors.grey
-                  : EventService.getCategoryColor(
-                    EventService.categories
-                        .firstWhere((cat) => cat.name == event.category)
+                  : FirebaseService.getCategoryColor(
+                    FirebaseService.categories
+                        .firstWhere(
+                          (cat) =>
+                              cat.name.toLowerCase() ==
+                              event.category.toLowerCase(),
+                          orElse:
+                              () => EventCategory(
+                                name: 'Uncategorized',
+                                color: 'blue',
+                              ),
+                        )
                         .color,
                   ),
           shape: BoxShape.circle,
           border: Border.all(color: Colors.white, width: 2),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
+              color: Colors.black.withOpacity(0.3),
               spreadRadius: 1,
               blurRadius: 3,
-              offset: Offset(0, 2),
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -124,10 +182,10 @@ class _OpenStreetMapScreenState extends State<OpenStreetMapScreen> {
                         : null,
                 onTap: () {
                   setState(() {
-                    _events = EventService.allEvents;
                     _currentFilter = 'All Events';
                   });
                   Navigator.pop(context);
+                  _loadEvents();
                 },
               ),
               ListTile(
@@ -138,10 +196,10 @@ class _OpenStreetMapScreenState extends State<OpenStreetMapScreen> {
                         : null,
                 onTap: () {
                   setState(() {
-                    _events = EventService.getUpcomingEvents();
                     _currentFilter = 'Upcoming Events';
                   });
                   Navigator.pop(context);
+                  _loadEvents();
                 },
               ),
               ListTile(
@@ -152,10 +210,10 @@ class _OpenStreetMapScreenState extends State<OpenStreetMapScreen> {
                         : null,
                 onTap: () {
                   setState(() {
-                    _events = EventService.getEndedEvents();
                     _currentFilter = 'Ended Events';
                   });
                   Navigator.pop(context);
+                  _loadEvents();
                 },
               ),
             ],
@@ -174,16 +232,19 @@ class _OpenStreetMapScreenState extends State<OpenStreetMapScreen> {
         foregroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: Icon(Icons.filter_list),
+            icon: const Icon(Icons.filter_list),
             onPressed: () {
               _showFilterDialog();
             },
           ),
+          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadEvents),
         ],
       ),
       body:
-          _currentLocation == null
+          _isLoading
               ? const Center(child: CircularProgressIndicator())
+              : _currentLocation == null
+              ? const Center(child: Text('Getting your location...'))
               : Stack(
                 children: [
                   FlutterMap(

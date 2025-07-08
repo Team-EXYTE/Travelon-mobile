@@ -1,12 +1,105 @@
 import 'package:flutter/material.dart';
 import '../data_model/event_model.dart';
-import '../services/event_service.dart';
+import '../services/firebase_service.dart';
 import '../screens/event_detail_screen.dart';
+import '../widgets/safe_scrollable.dart';
 
-class CategoryEventsScreen extends StatelessWidget {
+class CategoryEventsScreen extends StatefulWidget {
   final String categoryName;
 
   const CategoryEventsScreen({super.key, required this.categoryName});
+
+  @override
+  State<CategoryEventsScreen> createState() => _CategoryEventsScreenState();
+}
+
+class _CategoryEventsScreenState extends State<CategoryEventsScreen> {
+  final FirebaseService _firebaseService = FirebaseService();
+  List<Event> _events = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCategoryEvents();
+  }
+
+  Future<void> _loadCategoryEvents() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Try to fetch events from Firebase
+      final events = await _firebaseService.getEventsByCategory(
+        widget.categoryName,
+      );
+      setState(() {
+        _events = events;
+        _isLoading = false;
+      });
+    } catch (e) {
+      // If Firebase fetch fails, just show empty state
+      setState(() {
+        _events = [];
+        _isLoading = false;
+      });
+
+      // Show error message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to load events from Firebase.')),
+        );
+      }
+
+      debugPrint('Error loading events: $e');
+    }
+  }
+
+  // Helper method to build an event image
+  Widget _buildEventImage(Event event, double width, double height) {
+    // Get the primary image path from the event
+    String imagePath = event.imagePath;
+
+    // If there are images in the list, prioritize using the first one
+    if (event.images.isNotEmpty) {
+      imagePath = event.images[0]; // Use first image
+    }
+
+    // Check if the image is a network image or a local asset
+    if (imagePath.startsWith('http')) {
+      return Image.network(
+        imagePath,
+        width: width,
+        height: height,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            width: width,
+            height: height,
+            color: Colors.grey[300],
+            child: const Icon(Icons.broken_image, color: Colors.grey),
+          );
+        },
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            width: width,
+            height: height,
+            color: Colors.grey[200],
+            child: const Center(child: CircularProgressIndicator()),
+          );
+        },
+      );
+    } else {
+      return Image.asset(
+        imagePath,
+        width: width,
+        height: height,
+        fit: BoxFit.cover,
+      );
+    }
+  }
 
   Widget _eventCard(BuildContext context, Event event) {
     return GestureDetector(
@@ -31,7 +124,7 @@ class CategoryEventsScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.grey.withValues(alpha: 0.1),
+              color: Colors.grey.withOpacity(0.1),
               spreadRadius: 1,
               blurRadius: 4,
               offset: const Offset(0, 2),
@@ -45,12 +138,7 @@ class CategoryEventsScreen extends StatelessWidget {
                 topLeft: Radius.circular(12),
                 bottomLeft: Radius.circular(12),
               ),
-              child: Image.asset(
-                event.imagePath,
-                width: 120,
-                height: 120,
-                fit: BoxFit.cover,
-              ),
+              child: _buildEventImage(event, 120, 120),
             ),
             Expanded(
               child: Padding(
@@ -81,11 +169,14 @@ class CategoryEventsScreen extends StatelessWidget {
                           color: Colors.grey[600],
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          event.location,
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 12,
+                        Expanded(
+                          child: Text(
+                            event.location,
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
@@ -111,9 +202,8 @@ class CategoryEventsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final events = EventService.getEventsByCategory(categoryName);
-    final upcomingEvents = events.where((e) => !e.isEnded).toList();
-    final endedEvents = events.where((e) => e.isEnded).toList();
+    final upcomingEvents = _events.where((e) => !e.isEnded).toList();
+    final endedEvents = _events.where((e) => e.isEnded).toList();
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
@@ -125,16 +215,28 @@ class CategoryEventsScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          '$categoryName Events',
+          '${widget.categoryName} Events',
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
             fontSize: 18,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh, color: Colors.white),
+            onPressed: _loadCategoryEvents,
+          ),
+        ],
       ),
       body:
-          events.isEmpty
+          _isLoading
+              ? Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                ),
+              )
+              : _events.isEmpty
               ? Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -142,43 +244,50 @@ class CategoryEventsScreen extends StatelessWidget {
                     Icon(Icons.event_busy, size: 64, color: Colors.grey[400]),
                     const SizedBox(height: 16),
                     Text(
-                      'No events found in $categoryName category',
+                      'No events found in ${widget.categoryName} category',
                       style: TextStyle(fontSize: 18, color: Colors.grey[600]),
                     ),
                   ],
                 ),
               )
-              : SingleChildScrollView(
+              : SafeScrollable(
+                heightFactor: 0.85,
                 padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (upcomingEvents.isNotEmpty) ...[
-                      const Text(
-                        'Upcoming Events',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
+                child: SingleChildScrollView(
+                  physics: AlwaysScrollableScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (upcomingEvents.isNotEmpty) ...[
+                        const Text(
+                          'Upcoming Events',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      ...upcomingEvents.map(
-                        (event) => _eventCard(context, event),
-                      ),
-                    ],
-                    if (endedEvents.isNotEmpty) ...[
-                      if (upcomingEvents.isNotEmpty) const SizedBox(height: 24),
-                      const Text(
-                        'Past Events',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
+                        const SizedBox(height: 16),
+                        ...upcomingEvents.map(
+                          (event) => _eventCard(context, event),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      ...endedEvents.map((event) => _eventCard(context, event)),
+                      ],
+                      if (endedEvents.isNotEmpty) ...[
+                        if (upcomingEvents.isNotEmpty)
+                          const SizedBox(height: 24),
+                        const Text(
+                          'Past Events',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        ...endedEvents.map(
+                          (event) => _eventCard(context, event),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
     );

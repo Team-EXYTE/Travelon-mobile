@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../data_model/event_model.dart';
-import '../services/event_service.dart';
 import '../screens/event_detail_screen.dart';
+import '../services/firebase_service.dart';
+import '../widgets/safe_scrollable.dart';
 
 class SearchResultsScreen extends StatefulWidget {
   final String searchQuery;
@@ -13,8 +14,10 @@ class SearchResultsScreen extends StatefulWidget {
 }
 
 class _SearchResultsScreenState extends State<SearchResultsScreen> {
+  final FirebaseService _firebaseService = FirebaseService();
   List<Event> searchResults = [];
   bool isLoading = true;
+  String? _error;
 
   @override
   void initState() {
@@ -22,16 +25,20 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
     _performSearch();
   }
 
-  void _performSearch() {
+  Future<void> _performSearch() async {
     setState(() {
       isLoading = true;
+      _error = null;
     });
 
-    // Simulate search delay
-    Future.delayed(const Duration(milliseconds: 500), () {
+    try {
+      // Get all events from Firebase
+      final allEvents = await _firebaseService.getAllEvents();
+
+      // Filter events based on query
       final query = widget.searchQuery.toLowerCase();
       final results =
-          EventService.allEvents.where((event) {
+          allEvents.where((event) {
             return event.title.toLowerCase().contains(query) ||
                 event.description.toLowerCase().contains(query) ||
                 event.category.toLowerCase().contains(query) ||
@@ -42,7 +49,13 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
         searchResults = results;
         isLoading = false;
       });
-    });
+    } catch (e) {
+      setState(() {
+        _error = "Error searching events: $e";
+        isLoading = false;
+      });
+      debugPrint("Search error: $e");
+    }
   }
 
   Widget _eventCard(Event event) {
@@ -82,12 +95,45 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                 topLeft: Radius.circular(12),
                 bottomLeft: Radius.circular(12),
               ),
-              child: Image.asset(
-                event.imagePath,
-                width: 120,
-                height: 120,
-                fit: BoxFit.cover,
-              ),
+              child:
+                  event.imagePath.startsWith('http')
+                      ? Image.network(
+                        event.imagePath,
+                        width: 120,
+                        height: 120,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            width: 120,
+                            height: 120,
+                            color: Colors.grey[300],
+                            child: const Center(
+                              child: Icon(
+                                Icons.broken_image,
+                                size: 40,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          );
+                        },
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            width: 120,
+                            height: 120,
+                            color: Colors.grey[200],
+                            child: const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
+                        },
+                      )
+                      : Image.asset(
+                        event.imagePath,
+                        width: 120,
+                        height: 120,
+                        fit: BoxFit.cover,
+                      ),
             ),
             Expanded(
               child: Padding(
@@ -142,40 +188,38 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                           color: Colors.grey[600],
                         ),
                         const SizedBox(width: 4),
-                        Text(
-                          event.location,
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 12,
+                        Expanded(
+                          child: Text(
+                            event.location,
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         const Spacer(),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: EventService.getCategoryColor(
-                              EventService.categories
-                                  .firstWhere(
-                                    (cat) => cat.name == event.category,
-                                  )
-                                  .color,
-                            ).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            event.category,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: EventService.getCategoryColor(
-                                EventService.categories
-                                    .firstWhere(
-                                      (cat) => cat.name == event.category,
-                                    )
-                                    .color,
+                        Flexible(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: FirebaseService.getCategoryColorByName(
+                                event.category,
+                              ).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              event.category,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: FirebaseService.getCategoryColorByName(
+                                  event.category,
+                                ),
                               ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ),
@@ -240,6 +284,33 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                     ? const Center(
                       child: CircularProgressIndicator(color: Colors.black),
                     )
+                    : _error != null
+                    ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            size: 64,
+                            color: Colors.red[300],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Error searching events',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          ElevatedButton(
+                            onPressed: _performSearch,
+                            child: const Text('Try Again'),
+                          ),
+                        ],
+                      ),
+                    )
                     : searchResults.isEmpty
                     ? Center(
                       child: Column(
@@ -269,12 +340,16 @@ class _SearchResultsScreenState extends State<SearchResultsScreen> {
                         ],
                       ),
                     )
-                    : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: searchResults.length,
-                      itemBuilder: (context, index) {
-                        return _eventCard(searchResults[index]);
-                      },
+                    : SafeScrollable(
+                      heightFactor: 0.7,
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: searchResults.length,
+                        itemBuilder: (context, index) {
+                          return _eventCard(searchResults[index]);
+                        },
+                      ),
                     ),
           ),
         ],

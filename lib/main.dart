@@ -4,10 +4,14 @@ import 'screens/home_screen.dart';
 // import 'screens/signup_screen.dart';
 // import 'screens/login_screen.dart';
 
-Future<void> main() async{
-
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+Future<void> main() async {
+  try {
+    WidgetsFlutterBinding.ensureInitialized();
+    await Firebase.initializeApp();
+    debugPrint("Firebase initialized successfully!");
+  } catch (e) {
+    debugPrint("Error initializing Firebase: $e");
+  }
 
   runApp(const TravelonApp());
 }
@@ -20,9 +24,7 @@ class TravelonApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Travelon',
-      theme: ThemeData(
-        primarySwatch: Colors.grey,
-      ),
+      theme: ThemeData(primarySwatch: Colors.grey),
       // initialRoute: '/login',
       // routes: {
       //   '/login': (context) => LoginPage(),

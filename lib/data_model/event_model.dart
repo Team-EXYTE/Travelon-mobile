@@ -2,6 +2,7 @@ class Event {
   final String id;
   final String title;
   final String imagePath;
+  final List<String> images; // Add images list
   final String price;
   final String category;
   final String description;
@@ -15,6 +16,7 @@ class Event {
     required this.id,
     required this.title,
     required this.imagePath,
+    this.images = const [], // Default to empty list
     required this.price,
     required this.category,
     required this.description,
@@ -30,8 +32,5 @@ class EventCategory {
   final String name;
   final String color;
 
-  EventCategory({
-    required this.name,
-    required this.color,
-  });
+  EventCategory({required this.name, required this.color});
 }
