@@ -204,7 +204,7 @@ class FirebaseService {
           imagePath:
               imagesList.isNotEmpty ? imagesList[0] : 'assets/event1.jpeg',
           images: imagesList,
-          price: data['price'] != null ? '\$${data['price']}' : 'Free',
+          price: data['price'] != null ? '\Rs.${data['price']}' : 'Free',
           category: data['category'] ?? 'Uncategorized',
           description: data['description'] ?? 'No description available',
           location: data['location'] ?? 'Unknown location',
@@ -253,7 +253,7 @@ class FirebaseService {
         title: data['title'] ?? 'No Title',
         imagePath: imagesList.isNotEmpty ? imagesList[0] : 'assets/event1.jpeg',
         images: imagesList,
-        price: data['price'] != null ? '\$${data['price']}' : 'Free',
+        price: data['price'] != null ? '\Rs.${data['price']}' : 'Free',
         category: data['category'] ?? 'Uncategorized',
         description: data['description'] ?? 'No description available',
         location: data['location'] ?? 'Unknown location',
