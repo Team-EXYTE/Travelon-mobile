@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "616514890315",
+    "project_id": "exyte-travelon",
+    "storage_bucket": "exyte-travelon.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:616514890315:android:b8090d093787ea90c23bce",
+        "android_client_info": {
+          "package_name": "com.example.travelon_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBLc_U0SPFG_ndQ-YU0CdDcVzOw-4KJb9g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
