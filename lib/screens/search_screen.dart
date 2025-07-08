@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../data_model/event_model.dart';
-import '../services/event_service.dart';
 import '../screens/event_detail_screen.dart';
+import '../services/firebase_service.dart';
+import '../widgets/safe_scrollable.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -12,14 +13,38 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final FirebaseService _firebaseService = FirebaseService();
   List<Event> searchResults = [];
   bool isSearching = false;
+  bool isLoading = false;
   List<String> recentSearches = [];
+  List<Event> _allEvents = [];
 
   @override
   void initState() {
     super.initState();
     _searchController.addListener(_onSearchChanged);
+    _loadAllEvents();
+  }
+
+  Future<void> _loadAllEvents() async {
+    try {
+      setState(() {
+        isLoading = true;
+      });
+
+      final events = await _firebaseService.getAllEvents();
+
+      setState(() {
+        _allEvents = events;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      debugPrint("Error loading events for search: $e");
+    }
   }
 
   @override
@@ -48,7 +73,7 @@ class _SearchScreenState extends State<SearchScreen> {
   void _performSearch(String query) {
     final searchQuery = query.toLowerCase();
     final results =
-        EventService.allEvents.where((event) {
+        _allEvents.where((event) {
           return event.title.toLowerCase().contains(searchQuery) ||
               event.description.toLowerCase().contains(searchQuery) ||
               event.category.toLowerCase().contains(searchQuery) ||
@@ -104,12 +129,32 @@ class _SearchScreenState extends State<SearchScreen> {
         child: ListTile(
           leading: ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: Image.asset(
-              event.imagePath,
-              width: 60,
-              height: 60,
-              fit: BoxFit.cover,
-            ),
+            child:
+                event.imagePath.startsWith('http')
+                    ? Image.network(
+                      event.imagePath,
+                      width: 60,
+                      height: 60,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: 60,
+                          height: 60,
+                          color: Colors.grey[300],
+                          child: const Icon(
+                            Icons.broken_image,
+                            size: 24,
+                            color: Colors.grey,
+                          ),
+                        );
+                      },
+                    )
+                    : Image.asset(
+                      event.imagePath,
+                      width: 60,
+                      height: 60,
+                      fit: BoxFit.cover,
+                    ),
           ),
           title: Text(
             event.title,
@@ -125,28 +170,27 @@ class _SearchScreenState extends State<SearchScreen> {
               const SizedBox(height: 4),
               Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: EventService.getCategoryColor(
-                        EventService.categories
-                            .firstWhere((cat) => cat.name == event.category)
-                            .color,
-                      ).withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      event.category,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: EventService.getCategoryColor(
-                          EventService.categories
-                              .firstWhere((cat) => cat.name == event.category)
-                              .color,
+                  Flexible(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: FirebaseService.getCategoryColorByName(
+                          event.category,
+                        ).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        event.category,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: FirebaseService.getCategoryColorByName(
+                            event.category,
+                          ),
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ),
@@ -236,18 +280,34 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
             ...recentSearches.map((search) => _recentSearchItem(search)),
           ],
-          if (isSearching) ...[
+          if (isLoading) ...[
+            const Expanded(child: Center(child: CircularProgressIndicator())),
+          ] else if (isSearching) ...[
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
-              child: Text(
-                searchResults.isEmpty
-                    ? 'No results found'
-                    : '${searchResults.length} result${searchResults.length == 1 ? '' : 's'} found',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      searchResults.isEmpty
+                          ? 'No results found'
+                          : '${searchResults.length} result${searchResults.length == 1 ? '' : 's'} found',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.refresh),
+                    onPressed: () {
+                      _loadAllEvents().then(
+                        (_) => _performSearch(_searchController.text),
+                      );
+                    },
+                  ),
+                ],
               ),
             ),
             Expanded(
@@ -273,12 +333,16 @@ class _SearchScreenState extends State<SearchScreen> {
                           ],
                         ),
                       )
-                      : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: searchResults.length,
-                        itemBuilder: (context, index) {
-                          return _eventCard(searchResults[index]);
-                        },
+                      : SafeScrollable(
+                        heightFactor: 0.6,
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemCount: searchResults.length,
+                          itemBuilder: (context, index) {
+                            return _eventCard(searchResults[index]);
+                          },
+                        ),
                       ),
             ),
           ],

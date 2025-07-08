@@ -1,12 +1,56 @@
 import 'package:flutter/material.dart';
 import '../data_model/event_model.dart';
-import '../services/event_service.dart';
 import '../screens/event_detail_screen.dart';
+import '../services/firebase_service.dart';
+import '../widgets/safe_scrollable.dart';
 
-class LocationEventsScreen extends StatelessWidget {
+class LocationEventsScreen extends StatefulWidget {
   final String locationName;
 
   const LocationEventsScreen({super.key, required this.locationName});
+
+  @override
+  State<LocationEventsScreen> createState() => _LocationEventsScreenState();
+}
+
+class _LocationEventsScreenState extends State<LocationEventsScreen> {
+  final FirebaseService _firebaseService = FirebaseService();
+  List<Event> _events = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEvents();
+  }
+
+  Future<void> _loadEvents() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+
+      // Get all events and filter by location
+      final allEvents = await _firebaseService.getAllEvents();
+      final locationEvents =
+          allEvents
+              .where((event) => event.location == widget.locationName)
+              .toList();
+
+      setState(() {
+        _events = locationEvents;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = "Failed to load events: $e";
+        _isLoading = false;
+      });
+      debugPrint("Error loading location events: $e");
+    }
+  }
 
   Widget _eventCard(BuildContext context, Event event) {
     return GestureDetector(
@@ -99,36 +143,31 @@ class LocationEventsScreen extends StatelessWidget {
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: EventService.getCategoryColor(
-                              EventService.categories
-                                  .firstWhere(
-                                    (cat) => cat.name == event.category,
-                                  )
-                                  .color,
-                            ).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            event.category,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: EventService.getCategoryColor(
-                                EventService.categories
-                                    .firstWhere(
-                                      (cat) => cat.name == event.category,
-                                    )
-                                    .color,
+                        Flexible(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: FirebaseService.getCategoryColorByName(
+                                event.category,
+                              ).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              event.category,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: FirebaseService.getCategoryColorByName(
+                                  event.category,
+                                ),
                               ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ),
-                        const Spacer(),
+                        const SizedBox(width: 8),
                         Text(
                           event.price,
                           style: const TextStyle(
@@ -151,9 +190,10 @@ class LocationEventsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final events = EventService.getEventsByLocation(locationName);
-    final upcomingEvents = events.where((e) => !e.isEnded).toList();
-    final endedEvents = events.where((e) => e.isEnded).toList();
+    // The events are loaded in initState via _loadEvents() method
+    // Now we can just split the events based on isEnded flag
+    final upcomingEvents = _events.where((e) => !e.isEnded).toList();
+    final endedEvents = _events.where((e) => e.isEnded).toList();
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
@@ -165,7 +205,7 @@ class LocationEventsScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Events in $locationName',
+          'Events in ${widget.locationName}',
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
@@ -174,7 +214,7 @@ class LocationEventsScreen extends StatelessWidget {
         ),
       ),
       body:
-          events.isEmpty
+          _events.isEmpty
               ? Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -182,7 +222,7 @@ class LocationEventsScreen extends StatelessWidget {
                     Icon(Icons.location_off, size: 64, color: Colors.grey[400]),
                     const SizedBox(height: 16),
                     Text(
-                      'No events found in $locationName',
+                      'No events found in ${widget.locationName}',
                       style: TextStyle(fontSize: 18, color: Colors.grey[600]),
                     ),
                     const SizedBox(height: 8),
@@ -193,87 +233,98 @@ class LocationEventsScreen extends StatelessWidget {
                   ],
                 ),
               )
-              : SingleChildScrollView(
+              : SafeScrollable(
+                heightFactor: 0.85,
                 padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (upcomingEvents.isNotEmpty) ...[
-                      Row(
-                        children: [
-                          Icon(Icons.event, color: Colors.green, size: 20),
-                          SizedBox(width: 8),
-                          Text(
-                            'Upcoming Events',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          Spacer(),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.green.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              '${upcomingEvents.length}',
+                child: SingleChildScrollView(
+                  physics: AlwaysScrollableScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (upcomingEvents.isNotEmpty) ...[
+                        Row(
+                          children: [
+                            Icon(Icons.event, color: Colors.green, size: 20),
+                            SizedBox(width: 8),
+                            Text(
+                              'Upcoming Events',
                               style: TextStyle(
-                                color: Colors.green,
                                 fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                                color: Colors.black87,
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      ...upcomingEvents.map(
-                        (event) => _eventCard(context, event),
-                      ),
-                    ],
-                    if (endedEvents.isNotEmpty) ...[
-                      if (upcomingEvents.isNotEmpty) const SizedBox(height: 24),
-                      Row(
-                        children: [
-                          Icon(Icons.event_busy, color: Colors.grey, size: 20),
-                          SizedBox(width: 8),
-                          Text(
-                            'Past Events',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          Spacer(),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.grey.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              '${endedEvents.length}',
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontWeight: FontWeight.bold,
+                            Spacer(),
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                '${upcomingEvents.length}',
+                                style: TextStyle(
+                                  color: Colors.green,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      ...endedEvents.map((event) => _eventCard(context, event)),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        ...upcomingEvents.map(
+                          (event) => _eventCard(context, event),
+                        ),
+                      ],
+                      if (endedEvents.isNotEmpty) ...[
+                        if (upcomingEvents.isNotEmpty)
+                          const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.event_busy,
+                              color: Colors.grey,
+                              size: 20,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              'Past Events',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            Spacer(),
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                '${endedEvents.length}',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        ...endedEvents.map(
+                          (event) => _eventCard(context, event),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
     );
