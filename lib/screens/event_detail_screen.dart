@@ -42,11 +42,40 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   }
 
   Future<void> _loadEvent() async {
-    // If event is already provided, use it
+    // If event is already provided, use it as initial data
+    // but always try to fetch the latest data if we have an ID
     if (widget.event != null) {
       setState(() {
         _displayEvent = widget.event;
       });
+      
+      // If we have an event object, also try to fetch fresh data using its ID
+      if (widget.event?.id != null) {
+        try {
+          setState(() {
+            _isLoading = true;
+          });
+          
+          final freshEvent = await _firebaseService.getEventById(widget.event!.id);
+          
+          if (freshEvent != null) {
+            setState(() {
+              _displayEvent = freshEvent;
+              _isLoading = false;
+            });
+          } else {
+            setState(() {
+              _isLoading = false;
+            });
+          }
+        } catch (e) {
+          // If fetch fails, keep using the provided event object
+          setState(() {
+            _isLoading = false;
+          });
+          debugPrint('Error refreshing event data: $e');
+        }
+      }
       return;
     }
 

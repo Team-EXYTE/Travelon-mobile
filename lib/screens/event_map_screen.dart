@@ -23,6 +23,51 @@ class _EventMapScreenState extends State<EventMapScreen> {
     eventLocation = LatLng(widget.event.latitude, widget.event.longitude);
   }
 
+  // Helper method to build an event image
+  Widget _buildEventImage(Event event, double width, double height) {
+    // Get the primary image path from the event
+    String imagePath = event.imagePath;
+
+    // If there are images in the list, prioritize using the first one
+    if (event.images.isNotEmpty) {
+      imagePath = event.images[0]; // Use first image
+    }
+
+    // Check if the image is a network image or a local asset
+    if (imagePath.startsWith('http')) {
+      return Image.network(
+        imagePath,
+        width: width,
+        height: height,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            width: width,
+            height: height,
+            color: Colors.grey[300],
+            child: const Icon(Icons.broken_image, color: Colors.grey),
+          );
+        },
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            width: width,
+            height: height,
+            color: Colors.grey[200],
+            child: const Center(child: CircularProgressIndicator()),
+          );
+        },
+      );
+    } else {
+      return Image.asset(
+        imagePath,
+        width: width,
+        height: height,
+        fit: BoxFit.cover,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -61,12 +106,7 @@ class _EventMapScreenState extends State<EventMapScreen> {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: Image.asset(
-                    widget.event.imagePath,
-                    width: 60,
-                    height: 60,
-                    fit: BoxFit.cover,
-                  ),
+                  child: _buildEventImage(widget.event, 60, 60),
                 ),
                 SizedBox(width: 12),
                 Expanded(

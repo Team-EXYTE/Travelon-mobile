@@ -52,6 +52,51 @@ class _LocationEventsScreenState extends State<LocationEventsScreen> {
     }
   }
 
+  // Helper method to build an event image
+  Widget _buildEventImage(Event event, double width, double height) {
+    // Get the primary image path from the event
+    String imagePath = event.imagePath;
+
+    // If there are images in the list, prioritize using the first one
+    if (event.images.isNotEmpty) {
+      imagePath = event.images[0]; // Use first image
+    }
+
+    // Check if the image is a network image or a local asset
+    if (imagePath.startsWith('http')) {
+      return Image.network(
+        imagePath,
+        width: width,
+        height: height,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            width: width,
+            height: height,
+            color: Colors.grey[300],
+            child: const Icon(Icons.broken_image, color: Colors.grey),
+          );
+        },
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            width: width,
+            height: height,
+            color: Colors.grey[200],
+            child: const Center(child: CircularProgressIndicator()),
+          );
+        },
+      );
+    } else {
+      return Image.asset(
+        imagePath,
+        width: width,
+        height: height,
+        fit: BoxFit.cover,
+      );
+    }
+  }
+
   Widget _eventCard(BuildContext context, Event event) {
     return GestureDetector(
       onTap: () {
@@ -89,12 +134,7 @@ class _LocationEventsScreenState extends State<LocationEventsScreen> {
                 topLeft: Radius.circular(12),
                 bottomLeft: Radius.circular(12),
               ),
-              child: Image.asset(
-                event.imagePath,
-                width: 120,
-                height: 120,
-                fit: BoxFit.cover,
-              ),
+              child: _buildEventImage(event, 120, 120),
             ),
             Expanded(
               child: Padding(
@@ -211,6 +251,7 @@ class _LocationEventsScreenState extends State<LocationEventsScreen> {
             fontWeight: FontWeight.bold,
             fontSize: 18,
           ),
+          overflow: TextOverflow.ellipsis,
         ),
       ),
       body:
@@ -224,6 +265,9 @@ class _LocationEventsScreenState extends State<LocationEventsScreen> {
                     Text(
                       'No events found in ${widget.locationName}',
                       style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+                      textAlign: TextAlign.center,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 2,
                     ),
                     const SizedBox(height: 8),
                     Text(
