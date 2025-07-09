@@ -48,16 +48,18 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       setState(() {
         _displayEvent = widget.event;
       });
-      
+
       // If we have an event object, also try to fetch fresh data using its ID
       if (widget.event?.id != null) {
         try {
           setState(() {
             _isLoading = true;
           });
-          
-          final freshEvent = await _firebaseService.getEventById(widget.event!.id);
-          
+
+          final freshEvent = await _firebaseService.getEventById(
+            widget.event!.id,
+          );
+
           if (freshEvent != null) {
             setState(() {
               _displayEvent = freshEvent;
