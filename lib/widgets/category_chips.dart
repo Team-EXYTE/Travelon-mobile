@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../screens/category_events_screen.dart';
+import '../services/firebase_service.dart';
 
 class CategoryChips extends StatelessWidget {
   const CategoryChips({super.key});
@@ -17,14 +18,21 @@ class CategoryChips extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.only(right: 10),
         child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
             color: color,
             borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: color.withOpacity(0.2),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Text(
             label,
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
           ),
         ),
       ),
@@ -47,14 +55,19 @@ class CategoryChips extends StatelessWidget {
           height: 50,
           child: ListView(
             scrollDirection: Axis.horizontal,
-            padding: EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            physics: const BouncingScrollPhysics(),
             children: [
-              _categoryCard(context, 'Festivals', Colors.deepPurple),
-              _categoryCard(context, 'Music', Colors.indigo),
-              _categoryCard(context, 'Cultural', Colors.teal),
-              _categoryCard(context, 'Wellness', Colors.pinkAccent),
-              _categoryCard(context, 'Nature', Colors.green),
-              _categoryCard(context, 'Food & Drink', Colors.orange),
+              _categoryCard(context, 'Music', const Color(0xFFFF5A5F)),
+              _categoryCard(context, 'Sports', const Color(0xFF3498DB)),
+              _categoryCard(context, 'Food & Drink', const Color(0xFFF1C40F)),
+              _categoryCard(context, 'Arts & Culture', const Color(0xFF9B59B6)),
+              _categoryCard(context, 'Outdoor', const Color(0xFF2ECC71)),
+              _categoryCard(context, 'Nightlife', const Color(0xFF34495E)),
+              _categoryCard(context, 'Technology', const Color(0xFFE74C3C)),
+              _categoryCard(context, 'Business', const Color(0xFF1ABC9C)),
+              _categoryCard(context, 'Wellness', const Color(0xFFD35400)),
+              _categoryCard(context, 'Education', const Color(0xFF27AE60)),
             ],
           ),
         ),
