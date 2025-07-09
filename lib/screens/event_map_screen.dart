@@ -129,11 +129,15 @@ class _EventMapScreenState extends State<EventMapScreen> {
                             color: Colors.grey[600],
                           ),
                           SizedBox(width: 4),
-                          Text(
-                            widget.event.location,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
+                          Flexible(
+                            child: Text(
+                              widget.event.location,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
                             ),
                           ),
                         ],
