@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart' show debugPrint;
 import '../data_model/event_model.dart';
 
 class CartItem {
@@ -29,12 +30,19 @@ class CartItem {
   }
 
   double get totalPrice {
-    // Extract numeric value from price string (e.g., "\$10.99" -> 10.99)
-    String priceStr = event.price.replaceAll('\$', '');
+    // Extract numeric value from price string by removing currency symbols and non-numeric characters
+    String priceStr = event.price
+        .replaceAll('Rs.', '')
+        .replaceAll('\Rs.', '')
+        .replaceAll('LKR', '')
+        .replaceAll('\$', '')
+        .trim();
+    
     try {
       return double.parse(priceStr) * quantity;
     } catch (e) {
-      return 0.0; // For events with non-numeric prices like "April 14"
+      debugPrint('Failed to parse price: ${event.price}, error: $e');
+      return 0.0; // For events with non-numeric prices or "Free"
     }
   }
 }
@@ -44,7 +52,7 @@ class CartService extends ChangeNotifier {
   factory CartService() => _instance;
   CartService._internal();
 
-  List<CartItem> _items = [];
+  final List<CartItem> _items = [];
 
   List<CartItem> get items => List.unmodifiable(_items);
 

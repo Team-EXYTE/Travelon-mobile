@@ -329,7 +329,7 @@ class _CartScreenState extends State<CartScreen> {
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
               Text(
-                'Total: \Rs.${_cartService.totalAmount.toStringAsFixed(2)}',
+                'Total: Rs.${_cartService.totalAmount.toStringAsFixed(2)}',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
