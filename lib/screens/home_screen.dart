@@ -6,7 +6,6 @@ import '../widgets/event_section.dart';
 import '../widgets/category_chips.dart';
 import '../widgets/navigation_bar.dart';
 import '../screens/creator_dashboard.dart';
-import '../services/firebase_auth_service.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -53,34 +52,6 @@ class HomeScreen extends StatelessWidget {
         IconButton(
           icon: const Icon(Icons.notifications_none, color: Colors.white),
           onPressed: () {},
-        ),
-        IconButton(
-          icon: const Icon(Icons.logout, color: Colors.white),
-          tooltip: 'Logout',
-          onPressed: () async {
-            final confirm = await showDialog<bool>(
-              context: context,
-              builder:
-                  (context) => AlertDialog(
-                    title: const Text('Confirm Logout'),
-                    content: const Text('Are you sure you want to logout?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(false),
-                        child: const Text('Cancel'),
-                      ),
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(true),
-                        child: const Text('Logout'),
-                      ),
-                    ],
-                  ),
-            );
-            if (confirm == true) {
-              await FirebaseAuthService().signOut();
-              Navigator.pushReplacementNamed(context, '/login');
-            }
-          },
         ),
         const SizedBox(width: 8),
       ],
