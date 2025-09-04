@@ -1,3 +1,5 @@
+# Prevent committing sensitive Firebase config
+android/app/google-services.json
 # Miscellaneous
 *.class
 *.log
