@@ -20,7 +20,7 @@ class _SignupPageState extends State<SignupPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  void _signup() {
+  void _signup() async {
     if (_formKey.currentState!.validate()) {
       final email = _emailController.text.trim();
       final password = _passwordController.text;
@@ -37,6 +37,42 @@ class _SignupPageState extends State<SignupPage> {
         ).showSnackBar(SnackBar(content: Text("Please fill in all fields.")));
         return;
       }
+
+      // Dummy OTP step
+      String? otp = await showDialog<String>(
+        context: context,
+        builder: (context) {
+          final otpController = TextEditingController();
+          return AlertDialog(
+            title: const Text('Enter OTP'),
+            content: TextField(
+              controller: otpController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'OTP (123456)',
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, null),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed:
+                    () => Navigator.pop(context, otpController.text.trim()),
+                child: const Text('Submit'),
+              ),
+            ],
+          );
+        },
+      );
+      if (otp == null || otp.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Signup cancelled: OTP required.")),
+        );
+        return;
+      }
+
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text("Signing up...")));
@@ -88,7 +124,7 @@ class _SignupPageState extends State<SignupPage> {
   }
 
   String? _validateEmail(String? value) {
-    final emailRegex = RegExp(r"^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$");
+    final emailRegex = RegExp(r"^.+@gmail\.com$");
     if (value == null || value.isEmpty) return "Please enter your email";
     if (!emailRegex.hasMatch(value)) return "Enter a valid email";
     return null;
