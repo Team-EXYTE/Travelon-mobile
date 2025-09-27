@@ -5,6 +5,7 @@ import '../services/firebase_service.dart';
 import 'event_map_screen.dart';
 import 'checkout_screen.dart';
 import '../widgets/safe_scrollable.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class EventDetailScreen extends StatefulWidget {
   final String imagePath;
@@ -27,6 +28,30 @@ class EventDetailScreen extends StatefulWidget {
 }
 
 class _EventDetailScreenState extends State<EventDetailScreen> {
+  Future<bool> _checkEventSpaceAvailable(String eventId) async {
+    final doc =
+        await FirebaseFirestore.instance
+            .collection('events')
+            .doc(eventId)
+            .get();
+    if (!doc.exists) return false;
+    final data = doc.data() as Map<String, dynamic>;
+    int parseInt(dynamic value) {
+      if (value is int) return value;
+      if (value is String) return int.tryParse(value) ?? 0;
+      return 0;
+    }
+
+    final int count = parseInt(data['count'] ?? 0);
+    final int maxParticipants = parseInt(data['maxParticipants'] ?? 0);
+    return count < maxParticipants;
+  }
+
+  Future<void> _incrementEventCount(String eventId) async {
+    final docRef = FirebaseFirestore.instance.collection('events').doc(eventId);
+    await docRef.update({'count': FieldValue.increment(1)});
+  }
+
   int _currentImageIndex = 0;
   late PageController _pageController;
   final FirebaseService _firebaseService = FirebaseService();
@@ -48,16 +73,18 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       setState(() {
         _displayEvent = widget.event;
       });
-      
+
       // If we have an event object, also try to fetch fresh data using its ID
       if (widget.event?.id != null) {
         try {
           setState(() {
             _isLoading = true;
           });
-          
-          final freshEvent = await _firebaseService.getEventById(widget.event!.id);
-          
+
+          final freshEvent = await _firebaseService.getEventById(
+            widget.event!.id,
+          );
+
           if (freshEvent != null) {
             setState(() {
               _displayEvent = freshEvent;
@@ -360,10 +387,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                             // Event Details Cards
                             _buildDetailCard(
                               icon: Icons.location_on,
-                              title: 'Location',
+                              title: 'Address',
                               content:
-                                  displayEvent?.location ??
-                                  'Location not specified',
+                                  displayEvent?.address ??
+                                  'Address not specified',
                               color: Colors.red,
                             ),
 
@@ -458,7 +485,42 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                       ),
                                       onPressed:
                                           displayEvent != null
-                                              ? () {
+                                              ? () async {
+                                                // Check if space is available before booking
+                                                final eventId = displayEvent.id;
+                                                final hasSpace =
+                                                    await _checkEventSpaceAvailable(
+                                                      eventId,
+                                                    );
+                                                if (!hasSpace) {
+                                                  showDialog(
+                                                    context: context,
+                                                    builder:
+                                                        (
+                                                          context,
+                                                        ) => AlertDialog(
+                                                          title: const Text(
+                                                            'Participant Limit Reached',
+                                                          ),
+                                                          content: const Text(
+                                                            'Sorry, this event has reached its participant limit.',
+                                                          ),
+                                                          actions: [
+                                                            TextButton(
+                                                              onPressed:
+                                                                  () =>
+                                                                      Navigator.of(
+                                                                        context,
+                                                                      ).pop(),
+                                                              child: const Text(
+                                                                'OK',
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                  );
+                                                  return;
+                                                }
                                                 // Direct to checkout with single item
                                                 final cartService =
                                                     CartService();
@@ -467,7 +529,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                                   displayEvent,
                                                 );
 
-                                                Navigator.push(
+                                                // Wait for result from checkout
+                                                final result = await Navigator.push(
                                                   context,
                                                   MaterialPageRoute(
                                                     builder:
@@ -475,6 +538,12 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                                             const CheckoutScreen(),
                                                   ),
                                                 );
+                                                // If payment was successful, increment count
+                                                if (result == true) {
+                                                  await _incrementEventCount(
+                                                    eventId,
+                                                  );
+                                                }
                                               }
                                               : null,
                                       child: const Text(

@@ -29,13 +29,17 @@ class CartItem {
   }
 
   double get totalPrice {
-    // Extract numeric value from price string (e.g., "\$10.99" -> 10.99)
-    String priceStr = event.price.replaceAll('\$', '');
-    try {
-      return double.parse(priceStr) * quantity;
-    } catch (e) {
-      return 0.0; // For events with non-numeric prices like "April 14"
+    // Extract numeric value from price string (handles Rs., LKR, $, etc.)
+    // (removed unused variable)
+    final match = RegExp(r"([\d]+(?:[.][\d]+)?)").firstMatch(event.price);
+    if (match != null) {
+      try {
+        return double.parse(match.group(1)!) * quantity;
+      } catch (e) {
+        return 0.0;
+      }
     }
+    return 0.0;
   }
 }
 

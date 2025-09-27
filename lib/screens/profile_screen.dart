@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'settings_screen.dart';
 import '../services/firebase_auth_service.dart';
 import '../services/traveller_service.dart';
@@ -14,6 +16,41 @@ class UserProfilePage extends StatefulWidget {
 }
 
 class _UserProfilePageState extends State<UserProfilePage> {
+  final ImagePicker _picker = ImagePicker();
+  bool _uploadingImage = false;
+  Future<void> _pickAndUploadProfileImage() async {
+    final uid = await FirebaseAuthService().getCurrentUserId();
+    if (uid == null) return;
+    final XFile? pickedFile = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+    );
+    if (pickedFile == null) return;
+    setState(() {
+      _uploadingImage = true;
+    });
+    try {
+      final storageRef = FirebaseStorage.instance.ref().child(
+        'users-travellers/$uid.jpg',
+      );
+      await storageRef.putData(await pickedFile.readAsBytes());
+      final url = await storageRef.getDownloadURL();
+      await TravellerService().updateTravellerProfileImage(uid, url);
+      setState(() {
+        if (_traveller != null)
+          _traveller = _traveller!.copyWith(profileImage: url);
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to upload image: $e')));
+    } finally {
+      setState(() {
+        _uploadingImage = false;
+      });
+    }
+  }
+
   Traveller? _traveller;
   bool _loading = true;
   List<dynamic> _bookingEventIds = [];
@@ -70,8 +107,19 @@ class _UserProfilePageState extends State<UserProfilePage> {
     final String firstLetter =
         userName.isNotEmpty ? userName[0].toUpperCase() : '?';
 
+    // Split bookings into upcoming and past
+    final now = DateTime.now();
+    final upcomingEvents =
+        _bookingEvents
+            .where((e) => e.date.isAfter(now) || e.date.isAtSameMomentAs(now))
+            .toList()
+          ..sort((a, b) => a.date.compareTo(b.date));
+    final pastEvents =
+        _bookingEvents.where((e) => e.date.isBefore(now)).toList()
+          ..sort((a, b) => b.date.compareTo(a.date));
+
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 237, 232, 232),
+      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -174,7 +222,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                         gradient: LinearGradient(
                           colors: [
                             Color.fromARGB(255, 0, 0, 0),
-                            Color.fromARGB(255, 86, 199, 240),
+                            Color.fromARGB(255, 73, 76, 77),
                           ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
@@ -191,16 +239,62 @@ class _UserProfilePageState extends State<UserProfilePage> {
                         ),
                         child: Column(
                           children: [
-                            CircleAvatar(
-                              radius: 48,
-                              backgroundColor: Colors.black,
-                              child: Text(
-                                firstLetter,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 40,
-                                ),
+                            GestureDetector(
+                              onTap:
+                                  _uploadingImage
+                                      ? null
+                                      : _pickAndUploadProfileImage,
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  CircleAvatar(
+                                    radius: 48,
+                                    backgroundColor: Colors.black,
+                                    backgroundImage:
+                                        (_traveller?.profileImage != null &&
+                                                _traveller!
+                                                    .profileImage!
+                                                    .isNotEmpty)
+                                            ? NetworkImage(
+                                              _traveller!.profileImage!,
+                                            )
+                                            : null,
+                                    child:
+                                        (_traveller?.profileImage == null ||
+                                                _traveller!
+                                                    .profileImage!
+                                                    .isEmpty)
+                                            ? Text(
+                                              firstLetter,
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 40,
+                                              ),
+                                            )
+                                            : null,
+                                  ),
+                                  if (_uploadingImage)
+                                    const Positioned.fill(
+                                      child: Center(
+                                        child: CircularProgressIndicator(),
+                                      ),
+                                    ),
+                                  if (!_uploadingImage)
+                                    Positioned(
+                                      bottom: 0,
+                                      right: 0,
+                                      child: CircleAvatar(
+                                        radius: 16,
+                                        backgroundColor: Colors.white,
+                                        child: Icon(
+                                          Icons.camera_alt,
+                                          color: Colors.black,
+                                          size: 18,
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
                             ),
                             const SizedBox(height: 14),
@@ -251,7 +345,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
                                 ),
                               ],
                             ),
-                            // Removed Member Gold box
                           ],
                         ),
                       ),
@@ -261,6 +354,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12.0),
                       child: Card(
+                        color: Colors.white, // Make the My Bookings box white
                         elevation: 3,
                         margin: const EdgeInsets.only(bottom: 18),
                         shape: RoundedRectangleBorder(
@@ -290,33 +384,91 @@ class _UserProfilePageState extends State<UserProfilePage> {
                               const SizedBox(height: 10),
                               if (_loadingBookings)
                                 const Center(child: CircularProgressIndicator())
-                              else if (_bookingEvents.isNotEmpty)
-                                ..._bookingEvents.map(
-                                  (event) => Card(
-                                    margin: const EdgeInsets.symmetric(
-                                      vertical: 6,
+                              else if (_bookingEvents.isNotEmpty) ...[
+                                if (upcomingEvents.isNotEmpty) ...[
+                                  const Text(
+                                    'Upcoming Events',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
                                     ),
-                                    child: ListTile(
-                                      leading:
-                                          event.imagePath.isNotEmpty
-                                              ? Image.network(
-                                                event.imagePath,
-                                                width: 48,
-                                                height: 48,
-                                                fit: BoxFit.cover,
-                                              )
-                                              : const Icon(
-                                                Icons.book_online,
-                                                color: Colors.teal,
-                                              ),
-                                      title: Text(event.title),
-                                      subtitle: Text(
-                                        '${event.location}\n${event.date.toLocal().toString().split(' ')[0]}',
+                                  ),
+                                  SizedBox(height: 6),
+                                  ...upcomingEvents.map(
+                                    // For each event card in bookings, set color and border
+                                    (event) => Card(
+                                      color: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        side: BorderSide(color: Colors.grey.shade300, width: 1),
+                                      ),
+                                      margin: const EdgeInsets.symmetric(
+                                        vertical: 6,
+                                      ),
+                                      child: ListTile(
+                                        leading:
+                                            event.imagePath.isNotEmpty
+                                                ? Image.network(
+                                                  event.imagePath,
+                                                  width: 48,
+                                                  height: 48,
+                                                  fit: BoxFit.cover,
+                                                )
+                                                : const Icon(
+                                                  Icons.book_online,
+                                                  color: Colors.teal,
+                                                ),
+                                        title: Text(event.title),
+                                        subtitle: Text(
+                                          '${event.location}\n${event.date.toLocal().toString().split(' ')[0]}',
+                                        ),
                                       ),
                                     ),
                                   ),
-                                )
-                              else
+                                  const SizedBox(height: 12),
+                                ],
+                                if (pastEvents.isNotEmpty) ...[
+                                  const Text(
+                                    'Past Events',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  SizedBox(height: 6),
+                                  ...pastEvents.map(
+                                    // For each event card in bookings, set color and border
+                                    (event) => Card(
+                                      color: Colors.white,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        side: BorderSide(color: Colors.grey.shade300, width: 1),
+                                      ),
+                                      margin: const EdgeInsets.symmetric(
+                                        vertical: 6,
+                                      ),
+                                      child: ListTile(
+                                        leading:
+                                            event.imagePath.isNotEmpty
+                                                ? Image.network(
+                                                  event.imagePath,
+                                                  width: 48,
+                                                  height: 48,
+                                                  fit: BoxFit.cover,
+                                                )
+                                                : const Icon(
+                                                  Icons.book_online,
+                                                  color: Colors.teal,
+                                                ),
+                                        title: Text(event.title),
+                                        subtitle: Text(
+                                          '${event.location}\n${event.date.toLocal().toString().split(' ')[0]}',
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ] else
                                 const Padding(
                                   padding: EdgeInsets.all(12.0),
                                   child: Text(
