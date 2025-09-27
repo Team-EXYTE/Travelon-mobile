@@ -6,6 +6,7 @@ import '../widgets/event_section.dart';
 import '../widgets/category_chips.dart';
 import '../widgets/navigation_bar.dart';
 import '../screens/creator_dashboard.dart';
+import 'chatbot_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -40,6 +41,15 @@ class HomeScreen extends StatelessWidget {
       title: Image.asset('assets/logo.png', height: 36, fit: BoxFit.contain),
       centerTitle: false,
       actions: [
+        IconButton(
+          icon: const Icon(Icons.chat, color: Colors.white),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ChatbotScreen()),
+            );
+          },
+        ),
         IconButton(
           icon: const Icon(Icons.favorite_border, color: Colors.white),
           onPressed: () {
