@@ -1,3 +1,6 @@
 {
     "java.configuration.updateBuildConfiguration": "interactive"
+  "cmake.sourceDirectory": "C:/vscode/travelon_mobile/linux"
 }
+
+

@@ -236,7 +236,7 @@ class _SignupPageState extends State<SignupPage> {
                         borderRadius: BorderRadius.circular(30),
                       ),
                     ),
-                    child: Text("Sign Up"),
+                    child: Text("Sign Up",style: TextStyle(color: Colors.black)),
                   ),
                   SizedBox(height: 16),
                   Row(
