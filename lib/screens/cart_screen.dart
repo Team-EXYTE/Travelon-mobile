@@ -3,6 +3,7 @@ import '../services/cart_service.dart';
 import '../data_model/event_model.dart';
 import '../screens/checkout_screen.dart';
 import '../screens/event_detail_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -266,7 +267,34 @@ class _CartScreenState extends State<CartScreen> {
                       ),
                     ),
                     IconButton(
-                      onPressed: () {
+                      onPressed: () async {
+                        // Check availability before increasing quantity
+                        final eventDoc = await FirebaseFirestore.instance.collection('events').doc(cartItem.event.id).get();
+                        final data = eventDoc.data();
+                        int parseInt(dynamic value) {
+                          if (value is int) return value;
+                          if (value is String) return int.tryParse(value) ?? 0;
+                          return 0;
+                        }
+                        final int count = data != null ? parseInt(data['count']) : 0;
+                        final int maxParticipants = data != null ? parseInt(data['maxParticipants']) : 0;
+                        // Only check if maxParticipants is not null
+                        if (data != null && data['maxParticipants'] != null && count + cartItem.quantity >= maxParticipants) {
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Participant Limit Reached'),
+                              content: const Text('Sorry, this event has reached its participant limit.'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.of(context).pop(),
+                                  child: const Text('OK'),
+                                ),
+                              ],
+                            ),
+                          );
+                          return;
+                        }
                         _cartService.updateQuantity(
                           cartItem.event.id,
                           cartItem.quantity + 1,

@@ -42,8 +42,12 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       return 0;
     }
 
-    final int count = parseInt(data['count'] ?? 0);
-    final int maxParticipants = parseInt(data['maxParticipants'] ?? 0);
+    final int count = parseInt(data['count']);
+    final int maxParticipants = parseInt(data['maxParticipants']);
+    // If both are null, treat as unlimited
+    if (data['count'] == null && data['maxParticipants'] == null) {
+      return true;
+    }
     return count < maxParticipants;
   }
 
@@ -165,20 +169,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.white),
         title: Text(widget.title, style: const TextStyle(color: Colors.white)),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.favorite_border, color: Colors.white),
-            onPressed: () {
-              // TODO: Add to favorites
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.share, color: Colors.white),
-            onPressed: () {
-              // TODO: Share event
-            },
-          ),
-        ],
+        // Removed heart and share icons
+        actions: [],
       ),
       body:
           _isLoading
@@ -575,12 +567,41 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                       ),
                                       onPressed:
                                           displayEvent != null
-                                              ? () {
+                                              ? () async {
                                                 final cartService =
                                                     CartService();
+                                                // Check participant limit before adding to cart
+                                                final eventDoc = await FirebaseFirestore.instance.collection('events').doc(displayEvent.id).get();
+                                                final data = eventDoc.data();
+                                                int parseInt(dynamic value) {
+                                                  if (value is int) return value;
+                                                  if (value is String) return int.tryParse(value) ?? 0;
+                                                  return 0;
+                                                }
+                                                final int count = data != null ? parseInt(data['count']) : 0;
+                                                final int maxParticipants = data != null ? parseInt(data['maxParticipants']) : 0;
+                                                // Only check if maxParticipants is not null
+                                                if (data != null && data['maxParticipants'] != null && count >= maxParticipants) {
+                                                  showDialog(
+                                                    context: context,
+                                                    builder: (context) => AlertDialog(
+                                                      title: const Text('Participant Limit Reached'),
+                                                      content: const Text('Sorry, this event has reached its participant limit.'),
+                                                      actions: [
+                                                        TextButton(
+                                                          onPressed: () => Navigator.of(context).pop(),
+                                                          child: const Text('OK'),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  );
+                                                  return;
+                                                }
                                                 if (cartService.isInCart(
                                                   displayEvent.id,
                                                 )) {
+                                                  // Use root navigator context for navigation from SnackBar
+                                                  final rootContext = Navigator.of(context, rootNavigator: true).context;
                                                   ScaffoldMessenger.of(
                                                     context,
                                                   ).showSnackBar(
@@ -590,6 +611,15 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                                       ),
                                                       duration: const Duration(
                                                         seconds: 2,
+                                                      ),
+                                                      action: SnackBarAction(
+                                                        label: 'View Cart',
+                                                        onPressed: () {
+                                                          Navigator.pushNamed(
+                                                            rootContext,
+                                                            '/cart',
+                                                          );
+                                                        },
                                                       ),
                                                     ),
                                                   );

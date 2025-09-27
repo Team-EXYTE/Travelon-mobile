@@ -3,6 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'screens/home_screen.dart';
 import 'screens/signup_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/cart_screen.dart';
 
 Future<void> main() async {
   try {
@@ -30,6 +31,7 @@ class TravelonApp extends StatelessWidget {
         '/login': (context) => LoginPage(),
         '/signup': (context) => SignupPage(),
         '/home': (context) => const HomeScreen(),
+        '/cart': (context) => const CartScreen(),
       },
     );
   }
