@@ -69,6 +69,7 @@ class _CreatorDashboardState extends State<CreatorDashboard> {
     final userId = user?.uid ?? '';
     String firstName = '';
     String lastName = '';
+    String profileImage = '';
     if (userId.isNotEmpty) {
       final userDoc =
           await FirebaseFirestore.instance
@@ -76,11 +77,15 @@ class _CreatorDashboardState extends State<CreatorDashboard> {
               .doc(userId)
               .get();
       if (userDoc.exists && userDoc.data() != null) {
-        if (userDoc.data()!['firstName'] != null) {
-          firstName = userDoc.data()!['firstName'];
+        final data = userDoc.data()!;
+        if (data['firstName'] != null) {
+          firstName = data['firstName'];
         }
-        if (userDoc.data()!['lastName'] != null) {
-          lastName = userDoc.data()!['lastName'];
+        if (data['lastName'] != null) {
+          lastName = data['lastName'];
+        }
+        if (data['profileImage'] != null) {
+          profileImage = data['profileImage'];
         }
       }
     }
@@ -90,6 +95,7 @@ class _CreatorDashboardState extends State<CreatorDashboard> {
       'userID': userId,
       'firstName': firstName,
       'lastName': lastName,
+      'profileImage': profileImage,
       'timestamp': FieldValue.serverTimestamp(),
     };
     await FirebaseFirestore.instance.collection('moments').add(post);
@@ -256,9 +262,12 @@ class _CreatorDashboardState extends State<CreatorDashboard> {
                   children: [
                     CircleAvatar(
                       radius: 20,
-                      backgroundImage: AssetImage(
-                        post['profile'] ?? 'assets/user.png',
-                      ),
+                      backgroundImage:
+                          (post['profileImage'] != null &&
+                                  post['profileImage'].toString().isNotEmpty)
+                              ? NetworkImage(post['profileImage'])
+                              : const AssetImage('assets/user.png')
+                                  as ImageProvider,
                     ),
                     const SizedBox(width: 10),
                     Column(

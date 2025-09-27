@@ -49,10 +49,6 @@ class HomeScreen extends StatelessWidget {
             );
           },
         ),
-        IconButton(
-          icon: const Icon(Icons.notifications_none, color: Colors.white),
-          onPressed: () {},
-        ),
         const SizedBox(width: 8),
       ],
     );

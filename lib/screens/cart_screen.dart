@@ -185,11 +185,7 @@ class _CartScreenState extends State<CartScreen> {
               },
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: _buildEventImage(
-                  cartItem.event,
-                  80,
-                  80,
-                ),
+                child: _buildEventImage(cartItem.event, 80, 80),
               ),
             ),
             SizedBox(width: 16),
@@ -212,9 +208,15 @@ class _CartScreenState extends State<CartScreen> {
                         color: Colors.grey[600],
                       ),
                       SizedBox(width: 4),
-                      Text(
-                        cartItem.event.location,
-                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                      Flexible(
+                        child: Text(
+                          cartItem.event.location,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   ),
@@ -325,7 +327,7 @@ class _CartScreenState extends State<CartScreen> {
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
               Text(
-                'Total: \$${_cartService.totalAmount.toStringAsFixed(2)}',
+                'Total: \Rs.${_cartService.totalAmount.toStringAsFixed(2)}',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
