@@ -30,6 +30,21 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const ChatbotScreen()),
+          );
+        },
+        backgroundColor: Colors.black,
+        tooltip: 'Chat with our Assistant',
+        child: const Icon(
+          Icons.support_agent,
+          color: Colors.white,
+          size: 36, // Adjust the icon size here
+        ),
+      ),
       bottomNavigationBar: const TravelonNavBar(),
     );
   }
@@ -41,15 +56,6 @@ class HomeScreen extends StatelessWidget {
       title: Image.asset('assets/logo.png', height: 36, fit: BoxFit.contain),
       centerTitle: false,
       actions: [
-        IconButton(
-          icon: const Icon(Icons.chat, color: Colors.white),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const ChatbotScreen()),
-            );
-          },
-        ),
         IconButton(
           icon: const Icon(Icons.favorite_border, color: Colors.white),
           onPressed: () {
