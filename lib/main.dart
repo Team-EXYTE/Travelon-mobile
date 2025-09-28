@@ -4,6 +4,7 @@ import 'screens/home_screen.dart';
 import 'screens/signup_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/cart_screen.dart';
+import 'screens/profile_screen.dart';
 
 Future<void> main() async {
   try {
@@ -32,6 +33,7 @@ class TravelonApp extends StatelessWidget {
         '/signup': (context) => SignupPage(),
         '/home': (context) => const HomeScreen(),
         '/cart': (context) => const CartScreen(),
+        '/profile': (context) => const UserProfilePage(),
       },
     );
   }

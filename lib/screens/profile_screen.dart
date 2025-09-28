@@ -7,6 +7,7 @@ import '../services/traveller_service.dart';
 import '../data_model/traveller.dart';
 import '../data_model/event_model.dart';
 import '../services/firebase_service.dart';
+import 'booking_details_screen.dart';
 
 class UserProfilePage extends StatefulWidget {
   const UserProfilePage({super.key});
@@ -395,32 +396,48 @@ class _UserProfilePageState extends State<UserProfilePage> {
                                   ),
                                   SizedBox(height: 6),
                                   ...upcomingEvents.map(
-                                    // For each event card in bookings, set color and border
                                     (event) => Card(
                                       color: Colors.white,
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(12),
-                                        side: BorderSide(color: Colors.grey.shade300, width: 1),
+                                        side: BorderSide(
+                                          color: Colors.grey.shade300,
+                                          width: 1,
+                                        ),
                                       ),
                                       margin: const EdgeInsets.symmetric(
                                         vertical: 6,
                                       ),
-                                      child: ListTile(
-                                        leading:
-                                            event.imagePath.isNotEmpty
-                                                ? Image.network(
-                                                  event.imagePath,
-                                                  width: 48,
-                                                  height: 48,
-                                                  fit: BoxFit.cover,
-                                                )
-                                                : const Icon(
-                                                  Icons.book_online,
-                                                  color: Colors.teal,
-                                                ),
-                                        title: Text(event.title),
-                                        subtitle: Text(
-                                          '${event.location}\n${event.date.toLocal().toString().split(' ')[0]}',
+                                      child: InkWell(
+                                        borderRadius: BorderRadius.circular(12),
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder:
+                                                  (_) => BookingDetailsScreen(
+                                                    event: event,
+                                                  ),
+                                            ),
+                                          );
+                                        },
+                                        child: ListTile(
+                                          leading:
+                                              event.imagePath.isNotEmpty
+                                                  ? Image.network(
+                                                    event.imagePath,
+                                                    width: 48,
+                                                    height: 48,
+                                                    fit: BoxFit.cover,
+                                                  )
+                                                  : const Icon(
+                                                    Icons.book_online,
+                                                    color: Colors.teal,
+                                                  ),
+                                          title: Text(event.title),
+                                          subtitle: Text(
+                                            '${event.location}\n${event.date.toLocal().toString().split(' ')[0]}',
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -437,32 +454,48 @@ class _UserProfilePageState extends State<UserProfilePage> {
                                   ),
                                   SizedBox(height: 6),
                                   ...pastEvents.map(
-                                    // For each event card in bookings, set color and border
                                     (event) => Card(
                                       color: Colors.white,
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(12),
-                                        side: BorderSide(color: Colors.grey.shade300, width: 1),
+                                        side: BorderSide(
+                                          color: Colors.grey.shade300,
+                                          width: 1,
+                                        ),
                                       ),
                                       margin: const EdgeInsets.symmetric(
                                         vertical: 6,
                                       ),
-                                      child: ListTile(
-                                        leading:
-                                            event.imagePath.isNotEmpty
-                                                ? Image.network(
-                                                  event.imagePath,
-                                                  width: 48,
-                                                  height: 48,
-                                                  fit: BoxFit.cover,
-                                                )
-                                                : const Icon(
-                                                  Icons.book_online,
-                                                  color: Colors.teal,
-                                                ),
-                                        title: Text(event.title),
-                                        subtitle: Text(
-                                          '${event.location}\n${event.date.toLocal().toString().split(' ')[0]}',
+                                      child: InkWell(
+                                        borderRadius: BorderRadius.circular(12),
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder:
+                                                  (_) => BookingDetailsScreen(
+                                                    event: event,
+                                                  ),
+                                            ),
+                                          );
+                                        },
+                                        child: ListTile(
+                                          leading:
+                                              event.imagePath.isNotEmpty
+                                                  ? Image.network(
+                                                    event.imagePath,
+                                                    width: 48,
+                                                    height: 48,
+                                                    fit: BoxFit.cover,
+                                                  )
+                                                  : const Icon(
+                                                    Icons.book_online,
+                                                    color: Colors.teal,
+                                                  ),
+                                          title: Text(event.title),
+                                          subtitle: Text(
+                                            '${event.location}\n${event.date.toLocal().toString().split(' ')[0]}',
+                                          ),
                                         ),
                                       ),
                                     ),
