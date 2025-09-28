@@ -6,11 +6,12 @@ import 'screens/signup_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/cart_screen.dart';
 import 'screens/profile_screen.dart';
+import 'screens/sms_subscribe_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
-  
+
   try {
     await Firebase.initializeApp();
     debugPrint("Firebase initialized successfully!");
@@ -32,11 +33,12 @@ class TravelonApp extends StatelessWidget {
       theme: ThemeData(primarySwatch: Colors.blue), // Changed from grey
       initialRoute: '/login',
       routes: {
-        '/login': (context) => const LoginPage(), // Add const
-        '/signup': (context) => const SignupPage(), // Add const
+        '/login': (context) => const LoginPage(),
+        '/signup': (context) => const SignupPage(),
         '/home': (context) => const HomeScreen(),
         '/cart': (context) => const CartScreen(),
         '/profile': (context) => const UserProfilePage(),
+        '/sms_subscribe': (context) => const SmsSubscribeScreen(),
       },
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/firebase_auth_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'sms_subscribe_screen.dart'; // Import the new screen
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -26,50 +27,21 @@ class _SignupPageState extends State<SignupPage> {
       final password = _passwordController.text;
       final firstName = _firstNameController.text.trim();
       final lastName = _lastNameController.text.trim();
-      final phone = _phoneController.text.trim();
+      final phoneNumber = _phoneController.text.trim();
+      String formattedPhone = '';
+      if (phoneNumber.isNotEmpty) {
+        // Remove any leading 0, spaces, or +
+        String cleaned = phoneNumber.replaceAll(RegExp(r'^[0+\s]+'), '');
+        formattedPhone = '94$cleaned';
+      }
       if (firstName.isEmpty ||
           lastName.isEmpty ||
           email.isEmpty ||
           password.isEmpty ||
-          phone.isEmpty) {
+          phoneNumber.isEmpty) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text("Please fill in all fields.")));
-        return;
-      }
-
-      // Dummy OTP step
-      String? otp = await showDialog<String>(
-        context: context,
-        builder: (context) {
-          final otpController = TextEditingController();
-          return AlertDialog(
-            title: const Text('Enter OTP'),
-            content: TextField(
-              controller: otpController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'OTP (123456)',
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, null),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed:
-                    () => Navigator.pop(context, otpController.text.trim()),
-                child: const Text('Submit'),
-              ),
-            ],
-          );
-        },
-      );
-      if (otp == null || otp.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Signup cancelled: OTP required.")),
-        );
         return;
       }
 
@@ -81,7 +53,7 @@ class _SignupPageState extends State<SignupPage> {
           .signUpWithEmail(email, password)
           .then((user) async {
             if (user != null) {
-              debugPrint('Signup successful for user: ${user.uid}');
+              debugPrint('Signup successful for user: \\${user.uid}');
               try {
                 await FirebaseFirestore.instance
                     .collection('users-travellers')
@@ -91,16 +63,20 @@ class _SignupPageState extends State<SignupPage> {
                       'firstName': firstName,
                       'lastName': lastName,
                       'email': email,
-                      'phone': phone,
+                      'phoneNumber': formattedPhone,
                       'bookings': [],
+                      'joinDate': DateTime.now().toIso8601String(),
                     });
                 debugPrint('User data saved to Firestore.');
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text("Signup successful! Please login.")),
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text("Signup successful!")));
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => SmsSubscribeScreen()),
                 );
-                Navigator.pushReplacementNamed(context, '/login');
               } catch (firestoreError) {
-                debugPrint('Firestore error: $firestoreError');
+                debugPrint('Firestore error: \\${firestoreError}');
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text("Error saving user data: $firestoreError"),
@@ -180,13 +156,13 @@ class _SignupPageState extends State<SignupPage> {
                     decoration: InputDecoration(
                       labelText: 'Phone Number',
                       prefixIcon: Icon(Icons.phone),
+                      prefixText: '+94 ',
                     ),
                     keyboardType: TextInputType.phone,
                     validator: (value) {
                       if (value == null || value.isEmpty)
                         return 'Enter your phone number';
-                      if (value.length < 10)
-                        return 'Enter a valid phone number';
+                      if (value.length < 9) return 'Enter a valid phone number';
                       return null;
                     },
                   ),
@@ -236,7 +212,10 @@ class _SignupPageState extends State<SignupPage> {
                         borderRadius: BorderRadius.circular(30),
                       ),
                     ),
-                    child: Text("Sign Up",style: TextStyle(color: Colors.black)),
+                    child: Text(
+                      "Sign Up",
+                      style: TextStyle(color: Colors.black),
+                    ),
                   ),
                   SizedBox(height: 16),
                   Row(
