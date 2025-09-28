@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 
 class ChatbotService {
@@ -7,9 +8,15 @@ class ChatbotService {
   
   ChatbotService() {
     try {
+      // Use the API key from the .env file
+      final apiKey = dotenv.env['GEMINI_API_KEY'];
+      if (apiKey == null) {
+        print('Failed to load GEMINI_API_KEY from .env file');
+        return;
+      }
       _model = GenerativeModel(
-        model: 'gemini-1.5-flash',
-        apiKey: 'AIzaSyBzNZ-sZmIdb5N63D6W9wcmJ6PRQP8LWLU', // Replace with your actual API key
+        model: 'gemini-2.5-pro',
+        apiKey: apiKey,
       );
     } catch (e) {
       print('Failed to initialize Gemini AI: $e');
