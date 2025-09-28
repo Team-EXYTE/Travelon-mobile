@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../services/cart_service.dart';
 import '../data_model/event_model.dart';
-import '../services/mspace_payment_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:math';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -12,54 +13,71 @@ class CheckoutScreen extends StatefulWidget {
 }
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
-  Future<bool> _dummyMspacePaymentProcess(BuildContext context) async {
-    // Simulate payment initiation
-    bool otpRequired = true;
-    if (otpRequired) {
-      String? enteredOtp = await showDialog<String>(
+  // Add card controllers
+  final _cardNumberController = TextEditingController();
+  final _cvcController = TextEditingController();
+  final _cardNameController = TextEditingController();
+  final _expiryMonthController = TextEditingController();
+  final _expiryYearController = TextEditingController();
+
+  // Simulate a Stripe-like payment process
+  Future<bool> _simulateStripePayment(BuildContext context) async {
+    bool paymentSuccess = false;
+    // Validate card form fields before proceeding
+    if (!_formKey.currentState!.validate()) {
+      return false;
+    }
+    setState(() => _isProcessing = true);
+    await Future.delayed(const Duration(seconds: 2));
+    setState(() => _isProcessing = false);
+    paymentSuccess = true;
+    if (paymentSuccess) {
+      // Store event IDs to remove after payment
+      final itemsToRemove = List.from(_cartService.items);
+      for (final item in itemsToRemove) {
+        await _handleSuccessfulPayment(item.event.id, item.quantity);
+        _cartService.removeItem(item.event);
+      }
+      await showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) {
-          String otp = '';
-          return AlertDialog(
-            title: const Text('Enter OTP'),
-            content: TextField(
-              keyboardType: TextInputType.number,
-              maxLength: 6,
-              decoration: const InputDecoration(
-                hintText: 'Enter OTP sent to your mobile',
+        builder:
+            (context) => AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
               ),
-              onChanged: (value) => otp = value,
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.check_circle, color: Colors.green, size: 72),
+                  SizedBox(height: 16),
+                  Text(
+                    'Payment Successful!',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    Navigator.of(context).pushReplacementNamed('/profile');
+                  },
+                  child: const Text('OK'),
+                ),
+              ],
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(otp),
-                child: const Text('Submit'),
-              ),
-            ],
-          );
-        },
       );
-      if (enteredOtp == '123456') {
-        _showPaymentSuccessDialog({'success': true});
-        return true;
-      } else {
-        await showDialog(
-          context: context,
-          builder:
-              (context) => const AlertDialog(
-                title: Text('Payment Failed'),
-                content: Text('Incorrect OTP. Payment failed.'),
-              ),
-        );
-        return false;
-      }
     }
-    return false;
+    return paymentSuccess;
   }
 
   final CartService _cartService = CartService();
-  final MspacePaymentService _paymentService = MspacePaymentService();
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -70,12 +88,28 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   bool _isProcessing = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Autofill card details for demo/testing
+    _cardNameController.text = 'Brent Rivera';
+    _cardNumberController.text = '9510 4588 0046 7432';
+    _cvcController.text = '028';
+    _expiryMonthController.text = '12';
+    _expiryYearController.text = '2030';
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
     _mobileController.dispose();
     _addressController.dispose();
+    _cardNumberController.dispose();
+    _cvcController.dispose();
+    _cardNameController.dispose();
+    _expiryMonthController.dispose();
+    _expiryYearController.dispose();
     super.dispose();
   }
 
@@ -109,6 +143,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         _buildCustomerDetails(),
                         SizedBox(height: 24),
                         _buildPaymentMethod(),
+                        // Card form removed from here, now shown in dialog
                       ],
                     ),
                   ),
@@ -255,101 +290,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Widget _buildCustomerDetails() {
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Customer Details',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 16),
-          TextFormField(
-            controller: _nameController,
-            decoration: InputDecoration(
-              labelText: 'Full Name',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter your name';
-              }
-              return null;
-            },
-          ),
-          SizedBox(height: 16),
-          TextFormField(
-            controller: _emailController,
-            decoration: InputDecoration(
-              labelText: 'Email',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter your email';
-              }
-              if (!RegExp(
-                r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-              ).hasMatch(value)) {
-                return 'Please enter a valid email';
-              }
-              return null;
-            },
-          ),
-          SizedBox(height: 16),
-          TextFormField(
-            controller: _phoneController,
-            decoration: InputDecoration(
-              labelText: 'Phone Number',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter your phone number';
-              }
-              return null;
-            },
-          ),
-
-          SizedBox(height: 16),
-          TextFormField(
-            controller: _addressController,
-            decoration: InputDecoration(
-              labelText: 'Address',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            maxLines: 3,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter your address';
-              }
-              return null;
-            },
-          ),
-        ],
-      ),
-    );
+    return SizedBox.shrink();
   }
 
   Widget _buildPaymentMethod() {
@@ -360,7 +301,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withValues(alpha: 0.1),
+            color: Colors.grey.withOpacity(0.1),
             spreadRadius: 1,
             blurRadius: 4,
             offset: Offset(0, 2),
@@ -370,69 +311,106 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Payment Method',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Payment Details',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              Row(
+                children: [
+                  Image.network(
+                    'https://upload.wikimedia.org/wikipedia/commons/4/41/Visa_Logo.png',
+                    height: 28,
+                  ),
+                  SizedBox(width: 4),
+                  Image.network(
+                    'https://upload.wikimedia.org/wikipedia/commons/0/04/Mastercard-logo.png',
+                    height: 28,
+                  ),
+                  SizedBox(width: 4),
+                ],
+              ),
+            ],
           ),
           SizedBox(height: 16),
-          Container(
-            padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.blue[50],
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.blue[200]!),
+          TextFormField(
+            controller: _cardNameController,
+            decoration: InputDecoration(
+              labelText: 'Name on Card',
+              border: OutlineInputBorder(),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.blue[100],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        Icons.mobile_friendly,
-                        color: Colors.blue[700],
-                        size: 24,
-                      ),
-                    ),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'mspace',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue[700],
-                            ),
-                          ),
-                          Text(
-                            'Mobile Payment Solution',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.blue[600],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Icon(Icons.check_circle, color: Colors.green, size: 24),
-                  ],
-                ),
-                SizedBox(height: 12),
-                Text(
-                  'Secure mobile payment powered by mspace. Complete your payment using your mobile wallet.',
-                  style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-                ),
-              ],
-            ),
+            validator:
+                (value) => value == null || value.isEmpty ? 'Enter name' : null,
           ),
+          SizedBox(height: 12),
+          TextFormField(
+            controller: _cardNumberController,
+            keyboardType: TextInputType.number,
+            maxLength: 19,
+            decoration: InputDecoration(
+              labelText: 'Card Number',
+              border: OutlineInputBorder(),
+            ),
+            validator:
+                (value) =>
+                    value == null || value.isEmpty ? 'Enter card number' : null,
+          ),
+          SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: TextFormField(
+                  controller: _cvcController,
+                  keyboardType: TextInputType.number,
+                  maxLength: 4,
+                  decoration: InputDecoration(
+                    labelText: 'CVC',
+                    hintText: 'ex. 311',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator:
+                      (value) =>
+                          value == null || value.isEmpty ? 'Enter CVC' : null,
+                ),
+              ),
+              SizedBox(width: 8),
+              Expanded(
+                flex: 2,
+                child: TextFormField(
+                  controller: _expiryMonthController,
+                  keyboardType: TextInputType.number,
+                  maxLength: 2,
+                  decoration: InputDecoration(
+                    labelText: 'Expiration Month',
+                    hintText: 'MM',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator:
+                      (value) => value == null || value.isEmpty ? 'MM' : null,
+                ),
+              ),
+              SizedBox(width: 8),
+              Expanded(
+                flex: 3,
+                child: TextFormField(
+                  controller: _expiryYearController,
+                  keyboardType: TextInputType.number,
+                  maxLength: 4,
+                  decoration: InputDecoration(
+                    labelText: 'Expiration Year',
+                    hintText: 'YYYY',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator:
+                      (value) => value == null || value.isEmpty ? 'YYYY' : null,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16),
         ],
       ),
     );
@@ -483,7 +461,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              onPressed: _isProcessing ? null : _processOrder,
+              onPressed:
+                  _isProcessing ? null : () => _simulateStripePayment(context),
               child:
                   _isProcessing
                       ? SizedBox(
@@ -498,13 +477,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.mobile_friendly,
+                            Icons.credit_card,
                             color: Colors.white,
                             size: 20,
                           ),
                           SizedBox(width: 8),
                           Text(
-                            'Pay with mspace',
+                            'Pay with Stripe',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 16,
@@ -520,245 +499,66 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  void _processOrder() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+  // Helper to generate random ticket IDs
+  List<String> _generateTicketIds(int count) {
+    final rand = Random();
+    return List.generate(
+      count,
+      (i) =>
+          'TICKET_${DateTime.now().millisecondsSinceEpoch}_${rand.nextInt(100000)}',
+    );
+  }
 
-    setState(() {
-      _isProcessing = true;
+  Future<void> _storeTicketsInFirestore(
+    String eventId,
+    String userId,
+    List<String> ticketIds,
+  ) async {
+    final eventRef = FirebaseFirestore.instance
+        .collection('events')
+        .doc(eventId);
+    await FirebaseFirestore.instance.runTransaction((transaction) async {
+      final snapshot = await transaction.get(eventRef);
+      final data = snapshot.data() ?? {};
+      final currentTickets = (data['tickets'] ?? {}) as Map<String, dynamic>;
+      final existingIds = List<String>.from(currentTickets[userId] ?? []);
+      final updatedIds = [...existingIds, ...ticketIds];
+      // Update the count field as well
+      final currentCount = (data['count'] ?? 0) as int;
+      final newCount = currentCount + ticketIds.length;
+      transaction.set(eventRef, {
+        'tickets': {userId: updatedIds},
+        'count': newCount,
+      }, SetOptions(merge: true));
     });
+  }
 
-    try {
-      // Dummy mspace payment with OTP
-      final paymentSuccess = await _dummyMspacePaymentProcess(context);
-      setState(() {
-        _isProcessing = false;
-      });
-      if (paymentSuccess) {
-        // For each cart item, increment the event's participantCount by the quantity bought
-        for (final item in _cartService.items) {
-          await FirebaseFirestore.instance
-              .collection('events')
-              .doc(item.event.id)
-              .update({'count': FieldValue.increment(item.quantity)});
-        }
-
-        // Add event IDs to user's bookings array in users-travellers
-        final userId = /* TODO: Replace with actual user ID retrieval logic */
-            _nameController.text +
-            _phoneController.text; // TEMP: Replace with real user id
-        final eventIds =
-            _cartService.items.map((item) => item.event.id).toList();
-        await FirebaseFirestore.instance
-            .collection('users-travellers')
-            .doc(userId)
-            .set({
-              'bookings': FieldValue.arrayUnion(eventIds),
-            }, SetOptions(merge: true));
-
-        _cartService.clearCart();
-        _showPaymentSuccessDialog({'success': true});
-        Navigator.of(context).pop(true); // Signal success to previous screen
-      } else {
-        _showPaymentErrorDialog('Payment failed.');
+  Future<void> _addEventToUserBookings(String eventId) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    final userRef = FirebaseFirestore.instance
+        .collection('users-travellers')
+        .doc(user.uid);
+    await FirebaseFirestore.instance.runTransaction((transaction) async {
+      final snapshot = await transaction.get(userRef);
+      final data = snapshot.data() ?? {};
+      final currentBookings = List<String>.from(data['bookings'] ?? []);
+      if (!currentBookings.contains(eventId)) {
+        final updatedBookings = [...currentBookings, eventId];
+        transaction.set(userRef, {
+          'bookings': updatedBookings,
+        }, SetOptions(merge: true));
       }
-    } catch (e) {
-      setState(() {
-        _isProcessing = false;
-      });
-      _showPaymentErrorDialog(
-        'An unexpected error occurred: \\${e.toString()}',
-      );
-    }
+    });
   }
 
-  void _showPaymentSuccessDialog(Map<String, dynamic> paymentResult) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          titlePadding: EdgeInsets.only(top: 16, left: 16, right: 8, bottom: 0),
-          title: Stack(
-            children: [
-              Align(
-                alignment: Alignment.center,
-                child: Column(
-                  children: [
-                    Icon(Icons.check_circle, color: Colors.green, size: 48),
-                    SizedBox(height: 12),
-                    Text(
-                      'Payment Successful!',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Positioned(
-                right: 0,
-                top: 0,
-                child: IconButton(
-                  icon: Icon(Icons.close, color: Colors.grey[700]),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Text(
-                'Your payment has been processed successfully through mspace.',
-                style: TextStyle(fontSize: 16, color: Colors.black),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 20),
-              Container(
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.green, width: 1.5),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.mobile_friendly, color: Colors.green),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'mspace Payment Details',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 8),
-                    if (paymentResult['transactionId'] != null)
-                      Text(
-                        'Transaction ID: ${paymentResult['transactionId']}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black,
-                        ),
-                      ),
-                    if (paymentResult['referenceId'] != null)
-                      Text(
-                        'Reference ID: ${paymentResult['referenceId']}',
-                        style: TextStyle(fontSize: 12, color: Colors.black87),
-                      ),
-                    Text(
-                      'Amount: LKR ${_cartService.totalAmount.toStringAsFixed(2)}',
-                      style: TextStyle(fontSize: 12, color: Colors.green[700]),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 8),
-              Text(
-                'You will receive a confirmation SMS shortly.',
-                style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close dialog
-                Navigator.of(context).pop(); // Go back to previous screen
-                Navigator.of(context).pop(); // Go back to home
-              },
-              child: Text(
-                'OK',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showPaymentErrorDialog(String error) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Row(
-            children: [
-              Icon(Icons.error, color: Colors.red),
-              SizedBox(width: 8),
-              Text('Payment Failed'),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Unable to process your payment through mspace.',
-                style: TextStyle(fontSize: 16),
-              ),
-              SizedBox(height: 12),
-              Container(
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.red[50],
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.red[200]!),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.info_outline, color: Colors.red[700]),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        error,
-                        style: TextStyle(fontSize: 14, color: Colors.red[700]),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 8),
-              Text(
-                'Please check your mobile number and account balance, then try again.',
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
+  // Call this after successful payment
+  Future<void> _handleSuccessfulPayment(String eventId, int ticketCount) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    final ticketIds = _generateTicketIds(ticketCount);
+    await _storeTicketsInFirestore(eventId, user.uid, ticketIds);
+    await _addEventToUserBookings(eventId);
   }
 
   // Helper method to build an event image

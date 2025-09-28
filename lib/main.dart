@@ -3,6 +3,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'screens/home_screen.dart';
 import 'screens/signup_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/cart_screen.dart';
+import 'screens/profile_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,6 +32,8 @@ class TravelonApp extends StatelessWidget {
         '/login': (context) => const LoginPage(), // Add const
         '/signup': (context) => const SignupPage(), // Add const
         '/home': (context) => const HomeScreen(),
+        '/cart': (context) => const CartScreen(),
+        '/profile': (context) => const UserProfilePage(),
       },
     );
   }

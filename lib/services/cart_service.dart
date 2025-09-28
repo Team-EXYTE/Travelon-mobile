@@ -44,6 +44,11 @@ class CartItem {
 }
 
 class CartService extends ChangeNotifier {
+  // Remove an event from the cart by Event object
+  void removeItem(Event event) {
+    removeFromCart(event.id);
+  }
+
   static final CartService _instance = CartService._internal();
   factory CartService() => _instance;
   CartService._internal();
