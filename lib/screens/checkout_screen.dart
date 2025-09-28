@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/cart_service.dart';
 import '../data_model/event_model.dart';
 import '../services/mspace_payment_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -11,6 +12,52 @@ class CheckoutScreen extends StatefulWidget {
 }
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
+  Future<bool> _dummyMspacePaymentProcess(BuildContext context) async {
+    // Simulate payment initiation
+    bool otpRequired = true;
+    if (otpRequired) {
+      String? enteredOtp = await showDialog<String>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) {
+          String otp = '';
+          return AlertDialog(
+            title: const Text('Enter OTP'),
+            content: TextField(
+              keyboardType: TextInputType.number,
+              maxLength: 6,
+              decoration: const InputDecoration(
+                hintText: 'Enter OTP sent to your mobile',
+              ),
+              onChanged: (value) => otp = value,
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(otp),
+                child: const Text('Submit'),
+              ),
+            ],
+          );
+        },
+      );
+      if (enteredOtp == '123456') {
+        _showPaymentSuccessDialog({'success': true});
+        return true;
+      } else {
+        await showDialog(
+          context: context,
+          builder:
+              (context) => const AlertDialog(
+                title: Text('Payment Failed'),
+                content: Text('Incorrect OTP. Payment failed.'),
+              ),
+        );
+        return false;
+      }
+    }
+    return false;
+  }
+
   final CartService _cartService = CartService();
   final MspacePaymentService _paymentService = MspacePaymentService();
   final _formKey = GlobalKey<FormState>();
@@ -146,11 +193,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(6),
-                    child: _buildEventImage(
-                      item.event,
-                      50,
-                      50,
-                    ),
+                    child: _buildEventImage(item.event, 50, 50),
                   ),
                   SizedBox(width: 12),
                   Expanded(
@@ -177,7 +220,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     ),
                   ),
                   Text(
-                    '\$${item.totalPrice.toStringAsFixed(2)}',
+                    'Rs.${item.totalPrice.toStringAsFixed(2)}',
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
@@ -197,7 +240,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               Text(
-                '\$${_cartService.totalAmount.toStringAsFixed(2)}',
+                'Rs.${_cartService.totalAmount.toStringAsFixed(2)}',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -286,28 +329,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               return null;
             },
           ),
-          SizedBox(height: 16),
-          TextFormField(
-            controller: _mobileController,
-            decoration: InputDecoration(
-              labelText: 'Mobile Number for Payment (e.g., 0771234567)',
-              hintText: 'Enter your mobile number for mspace payment',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              prefixIcon: Icon(Icons.phone_android),
-            ),
-            keyboardType: TextInputType.phone,
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Please enter your mobile number for payment';
-              }
-              if (!_paymentService.isValidSriLankanMobile(value)) {
-                return 'Please enter a valid Sri Lankan mobile number';
-              }
-              return null;
-            },
-          ),
+
           SizedBox(height: 16),
           TextFormField(
             controller: _addressController,
@@ -441,7 +463,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               Text(
-                '\$${_cartService.totalAmount.toStringAsFixed(2)}',
+                'Rs.${_cartService.totalAmount.toStringAsFixed(2)}',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
@@ -508,31 +530,46 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     });
 
     try {
-      // Process payment using mspace API
-      final paymentResult = await _paymentService.processPayment(
-        phoneNumber: _mobileController.text,
-        amount: _cartService.totalAmount,
-        customerName: _nameController.text,
-        customerEmail: _emailController.text,
-      );
-
+      // Dummy mspace payment with OTP
+      final paymentSuccess = await _dummyMspacePaymentProcess(context);
       setState(() {
         _isProcessing = false;
       });
+      if (paymentSuccess) {
+        // For each cart item, increment the event's participantCount by the quantity bought
+        for (final item in _cartService.items) {
+          await FirebaseFirestore.instance
+              .collection('events')
+              .doc(item.event.id)
+              .update({'count': FieldValue.increment(item.quantity)});
+        }
 
-      if (paymentResult['success'] == true) {
-        // Payment successful
+        // Add event IDs to user's bookings array in users-travellers
+        final userId = /* TODO: Replace with actual user ID retrieval logic */
+            _nameController.text +
+            _phoneController.text; // TEMP: Replace with real user id
+        final eventIds =
+            _cartService.items.map((item) => item.event.id).toList();
+        await FirebaseFirestore.instance
+            .collection('users-travellers')
+            .doc(userId)
+            .set({
+              'bookings': FieldValue.arrayUnion(eventIds),
+            }, SetOptions(merge: true));
+
         _cartService.clearCart();
-        _showPaymentSuccessDialog(paymentResult);
+        _showPaymentSuccessDialog({'success': true});
+        Navigator.of(context).pop(true); // Signal success to previous screen
       } else {
-        // Payment failed
-        _showPaymentErrorDialog(paymentResult['error']);
+        _showPaymentErrorDialog('Payment failed.');
       }
     } catch (e) {
       setState(() {
         _isProcessing = false;
       });
-      _showPaymentErrorDialog('An unexpected error occurred: ${e.toString()}');
+      _showPaymentErrorDialog(
+        'An unexpected error occurred: \\${e.toString()}',
+      );
     }
   }
 
@@ -542,42 +579,72 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Row(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          titlePadding: EdgeInsets.only(top: 16, left: 16, right: 8, bottom: 0),
+          title: Stack(
             children: [
-              Icon(Icons.check_circle, color: Colors.green),
-              SizedBox(width: 8),
-              Text('Payment Successful!'),
+              Align(
+                alignment: Alignment.center,
+                child: Column(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.green, size: 48),
+                    SizedBox(height: 12),
+                    Text(
+                      'Payment Successful!',
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 20,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Positioned(
+                right: 0,
+                top: 0,
+                child: IconButton(
+                  icon: Icon(Icons.close, color: Colors.grey[700]),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ),
             ],
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
                 'Your payment has been processed successfully through mspace.',
-                style: TextStyle(fontSize: 16),
+                style: TextStyle(fontSize: 16, color: Colors.black),
+                textAlign: TextAlign.center,
               ),
-              SizedBox(height: 12),
+              SizedBox(height: 20),
               Container(
                 padding: EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.blue[50],
+                  color: Colors.grey[100],
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.blue[200]!),
+                  border: Border.all(color: Colors.green, width: 1.5),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.mobile_friendly, color: Colors.blue[700]),
+                        Icon(Icons.mobile_friendly, color: Colors.green),
                         SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             'mspace Payment Details',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: Colors.blue[700],
+                              color: Colors.black,
                             ),
                           ),
                         ),
@@ -590,17 +657,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: Colors.blue[700],
+                          color: Colors.black,
                         ),
                       ),
                     if (paymentResult['referenceId'] != null)
                       Text(
                         'Reference ID: ${paymentResult['referenceId']}',
-                        style: TextStyle(fontSize: 12, color: Colors.blue[600]),
+                        style: TextStyle(fontSize: 12, color: Colors.black87),
                       ),
                     Text(
                       'Amount: LKR ${_cartService.totalAmount.toStringAsFixed(2)}',
-                      style: TextStyle(fontSize: 12, color: Colors.blue[600]),
+                      style: TextStyle(fontSize: 12, color: Colors.green[700]),
                     ),
                   ],
                 ),
@@ -608,7 +675,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               SizedBox(height: 8),
               Text(
                 'You will receive a confirmation SMS shortly.',
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                style: TextStyle(fontSize: 14, color: Colors.grey[700]),
               ),
             ],
           ),
@@ -619,7 +686,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 Navigator.of(context).pop(); // Go back to previous screen
                 Navigator.of(context).pop(); // Go back to home
               },
-              child: Text('OK'),
+              child: Text(
+                'OK',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ],
         );

@@ -7,6 +7,7 @@ class Event {
   final String category;
   final String description;
   final String location;
+  final String address;
   final DateTime date;
   final bool isEnded;
   final double latitude;
@@ -21,6 +22,7 @@ class Event {
     required this.category,
     required this.description,
     required this.location,
+    required this.address,
     required this.date,
     this.isEnded = false,
     required this.latitude,

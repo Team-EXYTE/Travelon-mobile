@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+
 import '../data_model/traveller.dart';
 
 class TravellerService {
@@ -38,5 +39,9 @@ class TravellerService {
     return query.docs
         .map((doc) => Traveller.fromFirestore(doc.id, doc.data()))
         .toList();
+  }
+
+  Future<void> updateTravellerProfileImage(String uid, String imageUrl) async {
+    await FirebaseFirestore.instance.collection('users-travellers').doc(uid).update({'profileImage': imageUrl});
   }
 }
