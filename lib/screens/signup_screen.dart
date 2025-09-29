@@ -7,7 +7,6 @@ class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
   _SignupPageState createState() => _SignupPageState();
 }
 
@@ -108,43 +107,108 @@ class _SignupPageState extends State<SignupPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    // Define a consistent input decoration theme for this page
+    final inputDecorationTheme = InputDecoration(
+      labelStyle: TextStyle(color: Colors.black54),
+      hintStyle: TextStyle(color: Colors.black38),
+      prefixIconColor: Colors.black54,
+      enabledBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: Colors.black),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: Colors.red),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: Colors.red, width: 2),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      filled: true,
+      fillColor: Colors.grey.shade100,
+    );
+
     return Scaffold(
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: SingleChildScrollView(
-            child: Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  Image.asset('assets/logoblack.png', height: 70),
-                  SizedBox(height: 8),
-                  Text(
-                    "Create your Travelon account",
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 24),
-                  TextFormField(
-                    controller: _firstNameController,
-                    decoration: InputDecoration(
-                      labelText: 'First Name',
-                      prefixIcon: Icon(Icons.person),
+      backgroundColor: Colors.white,
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Top Image Section
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                Image.asset(
+                  'assets/srilanka.jpg',
+                  height: screenHeight * 0.30,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+                // Back button
+                Positioned(
+                  top: 40,
+                  left: 16,
+                  child: CircleAvatar(
+                    backgroundColor: Colors.black.withOpacity(0.5),
+                    child: IconButton(
+                      icon: Icon(Icons.arrow_back, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
                     ),
-                    validator:
-                        (value) =>
+                  ),
+                ),
+              ],
+            ),
+            // Form Section
+            Transform.translate(
+              offset: Offset(0, -30),
+              child: Container(
+                padding: const EdgeInsets.all(24.0),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(30),
+                    topRight: Radius.circular(30),
+                  ),
+                ),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Image.asset('assets/logoblack.png', height: 60),
+                      SizedBox(height: 8),
+                      Text(
+                        "Create your Travelon account",
+                        style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black),
+                      ),
+                      SizedBox(height: 24),
+                      TextFormField(
+                        controller: _firstNameController,
+                        decoration: inputDecorationTheme.copyWith(
+                          labelText: 'First Name',
+                          prefixIcon: Icon(Icons.person),
+                        ),
+                        validator: (value) =>
                             value == null || value.isEmpty
                                 ? 'Enter your first name'
                                 : null,
-                  ),
-                  SizedBox(height: 16),
-                  TextFormField(
-                    controller: _lastNameController,
-                    decoration: InputDecoration(
-                      labelText: 'Last Name',
-                      prefixIcon: Icon(Icons.person_outline),
-                    ),
-                    validator:
-                        (value) =>
+                      ),
+                      SizedBox(height: 16),
+                      TextFormField(
+                        controller: _lastNameController,
+                        decoration: inputDecorationTheme.copyWith(
+                          labelText: 'Last Name',
+                          prefixIcon: Icon(Icons.person_outline),
+                        ),
+                        validator: (value) =>
                             value == null || value.isEmpty
                                 ? 'Enter your last name'
                                 : null,
@@ -187,54 +251,107 @@ class _SignupPageState extends State<SignupPage> {
                           _showPassword
                               ? Icons.visibility
                               : Icons.visibility_off,
+
                         ),
-                        onPressed: () {
-                          setState(() {
-                            _showPassword = !_showPassword;
-                          });
+                        keyboardType: TextInputType.phone,
+                        validator: (value) {
+                          if (value == null || value.isEmpty)
+                            return 'Enter your phone number';
+                          if (value.length < 10)
+                            return 'Enter a valid phone number';
+                          return null;
                         },
                       ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty)
-                        return 'Enter a password';
-                      if (value.length < 6)
-                        return 'Password must be at least 6 characters';
-                      return null;
-                    },
-                  ),
-                  SizedBox(height: 24),
-                  ElevatedButton(
-                    onPressed: _signup,
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: Size(double.infinity, 50),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                    ),
-                    child: Text(
-                      "Sign Up",
-                      style: TextStyle(color: Colors.black),
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text("Already have an account? "),
-                      GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: Text(
-                          "Login",
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                      SizedBox(height: 16),
+                      TextFormField(
+                        controller: _emailController,
+                        decoration: inputDecorationTheme.copyWith(
+                          labelText: 'Email',
+                          prefixIcon: Icon(Icons.email),
                         ),
+                        validator: _validateEmail,
+                      ),
+
+                      SizedBox(height: 16),
+                      TextFormField(
+                        controller: _passwordController,
+                        obscureText: !_showPassword,
+                        decoration: inputDecorationTheme.copyWith(
+                          labelText: 'Password',
+                          prefixIcon: Icon(Icons.lock),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _showPassword
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
+                              color: Colors.grey,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _showPassword = !_showPassword;
+                              });
+                            },
+                          ),
+
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter a password';
+                          }
+                          if (value.length < 6) {
+                            return 'Password must be at least 6 characters long.';
+                          }
+                          if (!value.contains(RegExp(r'[A-Z]'))) {
+                            return 'Password must contain an uppercase letter.';
+                          }
+                          if (!value.contains(RegExp(r'[0-9]'))) {
+                            return 'Password must contain a number.';
+                          }
+                          if (!value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
+                            return 'Password must contain a special character.';
+                          }
+                          return null;
+                        },
+                      ),
+                      SizedBox(height: 24),
+                      ElevatedButton(
+                        onPressed: _signup,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.black,
+                          foregroundColor: Colors.white,
+                          minimumSize: Size(double.infinity, 50),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text("Sign Up",
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 16)),
+                      ),
+                      SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text("Already have an account? ",
+                              style: TextStyle(color: Colors.black54)),
+                          GestureDetector(
+                            onTap: () =>
+                                Navigator.pushReplacementNamed(context, '/login'),
+                            child: Text(
+                              "Login",
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
+                ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
