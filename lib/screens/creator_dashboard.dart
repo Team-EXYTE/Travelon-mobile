@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:ui';
 
 class CreatorDashboard extends StatefulWidget {
   const CreatorDashboard({super.key});
@@ -14,6 +15,7 @@ class CreatorDashboard extends StatefulWidget {
 
 class _CreatorDashboardState extends State<CreatorDashboard> {
   final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _locationController = TextEditingController();
   List<Map<String, dynamic>> _posts = [];
   @override
   void initState() {
@@ -47,15 +49,25 @@ class _CreatorDashboardState extends State<CreatorDashboard> {
   }
 
   void _submitPost() {
-    if (_selectedImage != null && _descriptionController.text.isNotEmpty) {
+    if (_selectedImage != null &&
+        _descriptionController.text.isNotEmpty &&
+        _locationController.text.isNotEmpty) {
       setState(() {
         _isPosting = true;
       });
-      _uploadMoment(_selectedImage!, _descriptionController.text);
+      _uploadMoment(
+        _selectedImage!,
+        _descriptionController.text,
+        _locationController.text,
+      );
     }
   }
 
-  Future<void> _uploadMoment(File imageFile, String description) async {
+  Future<void> _uploadMoment(
+    File imageFile,
+    String description,
+    String location,
+  ) async {
     // Upload image to Firebase Storage
     final fileName =
         'moments/${DateTime.now().millisecondsSinceEpoch}_${imageFile.path.split('/').last}';
@@ -92,6 +104,7 @@ class _CreatorDashboardState extends State<CreatorDashboard> {
     final post = {
       'imageUrl': imageUrl,
       'description': description,
+      'location': location,
       'userID': userId,
       'firstName': firstName,
       'lastName': lastName,
@@ -102,6 +115,7 @@ class _CreatorDashboardState extends State<CreatorDashboard> {
     setState(() {
       _selectedImage = null;
       _descriptionController.clear();
+      _locationController.clear();
       _isUploading = false;
       _isPosting = false;
     });
@@ -125,76 +139,97 @@ class _CreatorDashboardState extends State<CreatorDashboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Travelon Moments',
-          style: TextStyle(color: Colors.white),
+      extendBodyBehindAppBar: true,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+            child: AppBar(
+              title: const Text(
+                'Travelon Moments',
+                style: TextStyle(
+                  color: Color(0xFF222B45),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 22,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              backgroundColor: Colors.white70.withOpacity(0.55),
+              elevation: 0,
+              iconTheme: const IconThemeData(color: Color(0xFF222B45)),
+              actions: [
+                if (_isUploading)
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: _cancelUploading,
+                  ),
+              ],
+              flexibleSpace: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.18),
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(18),
+                    bottomRight: Radius.circular(18),
+                  ),
+                ),
+              ),
+            ),
+          ),
         ),
-        backgroundColor: Colors.black,
-        iconTheme: const IconThemeData(color: Colors.white),
-        actions: [
-          if (_isUploading)
-            IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: _cancelUploading,
-            ),
-        ],
       ),
-      body: Stack(
-        children: [
-          _isUploading ? _buildUploadForm() : _buildPostsList(),
-          if (_isPosting)
-            Container(
-              color: Colors.black.withOpacity(0.4),
-              child: const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text(
-                      'Posting...',
-                      style: TextStyle(color: Colors.white, fontSize: 18),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          if (!_isUploading && !_isPosting)
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 20,
-              child: Center(
-                child: ElevatedButton(
-                  onPressed: _startUploading,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromARGB(255, 5, 5, 5),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 14,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                  ),
-                  child: const Text(
-                    'Add Yours',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFF5F7FA), Color(0xFFE3EAF2), Color(0xFFD1E8FF)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Stack(
+          children: [
+            _isUploading ? _buildUploadForm() : _buildPostsList(),
+            if (_isPosting)
+              Container(
+                color: Colors.black.withOpacity(0.3),
+                child: const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 16),
+                      Text(
+                        'Posting...',
+                        style: TextStyle(color: Colors.white, fontSize: 18),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
+      floatingActionButton:
+          !_isUploading && !_isPosting
+              ? FloatingActionButton(
+                onPressed: _startUploading,
+                backgroundColor: const Color.fromARGB(255, 13, 13, 14),
+                child: const Icon(Icons.add, color: Colors.white, size: 30),
+                elevation: 6,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+              )
+              : null,
     );
   }
 
   Widget _buildUploadForm() {
+    final double topPadding =
+        MediaQuery.of(context).padding.top + kToolbarHeight + 18;
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: EdgeInsets.fromLTRB(12, topPadding, 12, 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -219,6 +254,15 @@ class _CreatorDashboardState extends State<CreatorDashboard> {
                         : const Center(child: Text("Tap to select image")),
               ),
             ),
+
+            const SizedBox(height: 10),
+            TextField(
+              controller: _locationController,
+              decoration: const InputDecoration(
+                hintText: 'Enter location...',
+                border: OutlineInputBorder(),
+              ),
+            ),
             const SizedBox(height: 10),
             TextField(
               controller: _descriptionController,
@@ -241,94 +285,170 @@ class _CreatorDashboardState extends State<CreatorDashboard> {
   }
 
   Widget _buildPostsList() {
+    final double topPadding =
+        MediaQuery.of(context).padding.top + kToolbarHeight + 18;
     return ListView.builder(
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.only(top: topPadding, bottom: 18, left: 0, right: 0),
       itemCount: _posts.length,
       itemBuilder: (context, index) {
         final post = _posts[index];
-        return Card(
-          margin: const EdgeInsets.symmetric(vertical: 8),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+        final fullName =
+            (((post['firstName'] ?? '') + ' ' + (post['lastName'] ?? ''))
+                .trim());
+        return Container(
+          margin: const EdgeInsets.symmetric(vertical: 18, horizontal: 18),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.95),
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.blue.withOpacity(0.08),
+                blurRadius: 24,
+                offset: const Offset(0, 10),
+              ),
+            ],
+            border: Border.all(
+              color: Colors.white.withOpacity(0.7),
+              width: 1.2,
+            ),
           ),
-          elevation: 3,
-          child: Padding(
-            padding: const EdgeInsets.all(10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Profile Info
-                Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundImage:
-                          (post['profileImage'] != null &&
-                                  post['profileImage'].toString().isNotEmpty)
-                              ? NetworkImage(post['profileImage'])
-                              : const AssetImage('assets/user.png')
-                                  as ImageProvider,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Image with user overlay and glass effect
+              Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(24),
+                      topRight: Radius.circular(24),
                     ),
-                    const SizedBox(width: 10),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Text(
-                              post['firstName'] ?? '',
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
-                            ),
-                            if ((post['lastName'] ?? '')
-                                .toString()
-                                .isNotEmpty) ...[
-                              const SizedBox(width: 6),
-                              Text(
-                                post['lastName'] ?? '',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
+                    child:
+                        post['imageUrl'] != null
+                            ? Image.network(
+                              post['imageUrl'],
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              height: 220,
+                              errorBuilder:
+                                  (context, error, stackTrace) => Container(
+                                    color: Colors.grey[200],
+                                    height: 220,
+                                    child: const Center(
+                                      child: Icon(Icons.broken_image, size: 40),
+                                    ),
+                                  ),
+                            )
+                            : Container(
+                              height: 220,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFF5F6FA),
+                                borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(24),
+                                  topRight: Radius.circular(24),
                                 ),
                               ),
-                            ],
-                          ],
+                              child: const Center(
+                                child: Icon(Icons.broken_image, size: 40),
+                              ),
+                            ),
+                  ),
+                  // User info overlay with glassmorphism
+                  Positioned(
+                    left: 18,
+                    top: 18,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.55),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.04),
+                            blurRadius: 8,
+                          ),
+                        ],
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.7),
+                          width: 0.8,
                         ),
-                      ],
+                      ),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 17,
+                            backgroundColor: Colors.white,
+                            backgroundImage:
+                                (post['profileImage'] != null &&
+                                        post['profileImage']
+                                            .toString()
+                                            .isNotEmpty)
+                                    ? NetworkImage(post['profileImage'])
+                                    : const AssetImage('assets/user.png')
+                                        as ImageProvider,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            fullName.isNotEmpty ? fullName : 'Unknown',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: Color(0xFF222B45),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    const Spacer(),
+                  ),
+                ],
+              ),
+              // Title (use description or fallback)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+                child: Text(
+                  (post['description'] ?? '').isNotEmpty
+                      ? post['description']
+                      : 'Untitled',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                    color: Color(0xFF222B45),
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              // Location (use a placeholder or add a location field if available)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.location_on,
+                      color: Colors.redAccent,
+                      size: 18,
+                    ),
                     const SizedBox(width: 4),
-                    const Icon(Icons.more_vert, size: 18),
+                    Expanded(
+                      child: Text(
+                        post['location'] ?? '',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          color: Color(0xFF8F9BB3),
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 10),
-                // Image
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child:
-                      post['imageUrl'] != null
-                          ? Image.network(
-                            post['imageUrl'],
-                            fit: BoxFit.cover,
-                            height: 200,
-                            width: double.infinity,
-                          )
-                          : const SizedBox(
-                            height: 200,
-                            child: Center(child: Text('No image')),
-                          ),
-                ),
-                const SizedBox(height: 10),
-                // Description
-                Text(
-                  post['description'] ?? '',
-                  style: const TextStyle(fontSize: 15),
-                ),
-                const SizedBox(height: 6),
-                // Date
-                Text(
+              ),
+              // Date
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
+                child: Text(
                   (post['timestamp'] is Timestamp)
                       ? (post['timestamp'] as Timestamp)
                           .toDate()
@@ -336,11 +456,13 @@ class _CreatorDashboardState extends State<CreatorDashboard> {
                           .toString()
                           .split(' ')[0]
                       : post['timestamp']?.toString().split(' ')[0] ?? '',
-                  style: const TextStyle(fontSize: 13, color: Colors.grey),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF8F9BB3),
+                  ),
                 ),
-                const SizedBox(height: 10),
-              ],
-            ),
+              ),
+            ],
           ),
         );
       },
