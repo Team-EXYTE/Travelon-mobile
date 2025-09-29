@@ -245,6 +245,9 @@ User question: $userMessage
   // Check if the message is related to Sri Lankan tourism
   bool _isTourismRelated(String message) {
   List<String> tourismKeywords = [
+    // Greetings
+    'hi', 'hello', 'hey', 'good morning', 'good afternoon', 'good evening',
+    
     // Sri Lankan places
     'sri lanka', 'sigiriya', 'ella', 'kandy', 'colombo', 'galle', 'anuradhapura',
     'nuwara eliya', 'bentota', 'hikkaduwa', 'polonnaruwa', 'dambulla', 
