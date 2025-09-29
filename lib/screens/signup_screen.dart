@@ -7,6 +7,7 @@ class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
 
   @override
+  // ignore: library_private_types_in_public_api
   _SignupPageState createState() => _SignupPageState();
 }
 
@@ -52,7 +53,7 @@ class _SignupPageState extends State<SignupPage> {
           .signUpWithEmail(email, password)
           .then((user) async {
             if (user != null) {
-              debugPrint('Signup successful for user: \\${user.uid}');
+              debugPrint('Signup successful for user: ${user.uid}');
               try {
                 await FirebaseFirestore.instance
                     .collection('users-travellers')
@@ -75,7 +76,7 @@ class _SignupPageState extends State<SignupPage> {
                   MaterialPageRoute(builder: (_) => SmsSubscribeScreen()),
                 );
               } catch (firestoreError) {
-                debugPrint('Firestore error: \\${firestoreError}');
+                debugPrint('Firestore error: ${firestoreError}');
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text("Error saving user data: $firestoreError"),
@@ -212,52 +213,20 @@ class _SignupPageState extends State<SignupPage> {
                             value == null || value.isEmpty
                                 ? 'Enter your last name'
                                 : null,
-                  ),
-                  SizedBox(height: 16),
-                  SizedBox(height: 16),
-                  TextFormField(
-                    controller: _phoneController,
-                    decoration: InputDecoration(
-                      labelText: 'Phone Number',
-                      prefixIcon: Icon(Icons.phone),
-                      prefixText: '+94 ',
-                    ),
-                    keyboardType: TextInputType.phone,
-                    validator: (value) {
-                      if (value == null || value.isEmpty)
-                        return 'Enter your phone number';
-                      if (value.length < 9) return 'Enter a valid phone number';
-                      return null;
-                    },
-                  ),
-                  SizedBox(height: 16),
-                  TextFormField(
-                    controller: _emailController,
-                    decoration: InputDecoration(
-                      labelText: 'Email',
-                      prefixIcon: Icon(Icons.email),
-                    ),
-                    validator: _validateEmail,
-                  ),
-                  SizedBox(height: 16),
-                  TextFormField(
-                    controller: _passwordController,
-                    obscureText: !_showPassword,
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      prefixIcon: Icon(Icons.lock),
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _showPassword
-                              ? Icons.visibility
-                              : Icons.visibility_off,
-
+                      ),
+                      SizedBox(height: 16),
+                      TextFormField(
+                        controller: _phoneController,
+                        decoration: inputDecorationTheme.copyWith(
+                          labelText: 'Phone Number',
+                          prefixIcon: Icon(Icons.phone),
+                          prefixText: '+94 ',
                         ),
                         keyboardType: TextInputType.phone,
                         validator: (value) {
                           if (value == null || value.isEmpty)
                             return 'Enter your phone number';
-                          if (value.length < 10)
+                          if (value.length < 9)
                             return 'Enter a valid phone number';
                           return null;
                         },
@@ -271,7 +240,6 @@ class _SignupPageState extends State<SignupPage> {
                         ),
                         validator: _validateEmail,
                       ),
-
                       SizedBox(height: 16),
                       TextFormField(
                         controller: _passwordController,
@@ -292,14 +260,13 @@ class _SignupPageState extends State<SignupPage> {
                               });
                             },
                           ),
-
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter a password';
                           }
-                          if (value.length < 6) {
-                            return 'Password must be at least 6 characters long.';
+                          if (value.length < 8) {
+                            return 'Password must be at least 8 characters long.';
                           }
                           if (!value.contains(RegExp(r'[A-Z]'))) {
                             return 'Password must contain an uppercase letter.';
