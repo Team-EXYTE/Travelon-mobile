@@ -18,22 +18,9 @@ Travelon is a modern Flutter app for discovering, sharing, and booking travel ex
 
 ---
 
-## Screenshots
-
-<div align="center" style="display: flex; flex-direction: row; justify-content: center; gap: 32px;">
-   <div>
-      <img src="assets/login.jpg" alt="Login" width="220"/>
-      <div align="center"><b>Login</b></div>
-   </div>
-   <div>
-      <img src="assets/signup.jpg" alt="Signup" width="220"/>
-      <div align="center"><b>Signup</b></div>
-   </div>
-     <div>
-      <img src="assets/home.jpg" alt="Signup" width="220"/>
-      <div align="center"><b>Home</b></div>
-   </div>
-</div>
+|Login    |        Signup    |                        
+| :-----------: | :-------------------: | 
+| <img src="assets/login.jpg" alt="Login" width="250"/> | <img src="assets/signup.jpg" alt="Signup" width="250"/> |
 
 ---
 
@@ -66,7 +53,6 @@ Travelon is a modern Flutter app for discovering, sharing, and booking travel ex
    ```
 
 ---
-
 
 ## Key Technologies
 
