@@ -64,17 +64,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
     _fetchTraveller();
   }
 
-  void _handleSmsSubscribe() {
-    if (_traveller?.subscriptionStatus == 'subscribed') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('You have already subscribed to SMS service.'),
-        ),
-      );
-    } else {
-      Navigator.pushNamed(context, '/sms_subscribe');
-    }
-  }
+  // SMS subscription feature removed from profile page.
 
   Future<void> _fetchTraveller() async {
     final uid = await FirebaseAuthService().getCurrentUserId();
@@ -363,120 +353,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
                       ),
                     ),
                     const SizedBox(height: 15),
-                    // SMS Subscription Box (Themed)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16.0,
-                        vertical: 4,
-                      ),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [
-                              Color.fromARGB(255, 84, 78, 94),
-                              Color.fromARGB(255, 9, 10, 10),
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.08),
-                              blurRadius: 8,
-                              offset: Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            vertical: 18.0,
-                            horizontal: 18.0,
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.08),
-                                      blurRadius: 4,
-                                    ),
-                                  ],
-                                ),
-                                padding: const EdgeInsets.all(10),
-                                child: Icon(
-                                  Icons.sms,
-                                  color: Color.fromARGB(255, 0, 0, 0),
-                                  size: 28,
-                                ),
-                              ),
-                              const SizedBox(width: 18),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'SMS Service',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 18,
-                                        letterSpacing: 0.5,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      _traveller?.subscriptionStatus ==
-                                              'subscribed'
-                                          ? 'You are already subscribed.'
-                                          : 'Get event updates and offers via SMS!',
-                                      style: TextStyle(
-                                        color: Colors.white.withOpacity(0.92),
-                                        fontSize: 14,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              ElevatedButton(
-                                onPressed: _handleSmsSubscribe,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor:
-                                      _traveller?.subscriptionStatus ==
-                                              'subscribed'
-                                          ? Colors.white.withOpacity(0.7)
-                                          : Colors.white,
-                                  foregroundColor: Color.fromARGB(255, 16, 18, 18),
-                                  elevation: 0,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(30),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 18,
-                                    vertical: 10,
-                                  ),
-                                ),
-                                child: Text(
-                                  _traveller?.subscriptionStatus == 'subscribed'
-                                      ? 'Subscribed'
-                                      : 'Subscribe',
-                                  style: TextStyle(
-                                    color: Color.fromARGB(255, 5, 6, 6),
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    // ...existing code...
                     const SizedBox(height: 20),
                     // Show My Bookings directly as a list
                     Padding(

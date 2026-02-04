@@ -6,7 +6,6 @@ import 'screens/signup_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/cart_screen.dart';
 import 'screens/profile_screen.dart';
-import 'screens/sms_subscribe_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,7 +37,6 @@ class TravelonApp extends StatelessWidget {
         '/home': (context) => const HomeScreen(),
         '/cart': (context) => const CartScreen(),
         '/profile': (context) => const UserProfilePage(),
-        '/sms_subscribe': (context) => const SmsSubscribeScreen(),
       },
     );
   }
