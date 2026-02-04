@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/firebase_auth_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'sms_subscribe_screen.dart'; // Import the new screen
+// After signup we redirect users to login instead of SMS subscription
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -71,10 +71,8 @@ class _SignupPageState extends State<SignupPage> {
                 ScaffoldMessenger.of(
                   context,
                 ).showSnackBar(SnackBar(content: Text("Signup successful!")));
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (_) => SmsSubscribeScreen()),
-                );
+                // Redirect to login so the user can sign in
+                Navigator.pushReplacementNamed(context, '/login');
               } catch (firestoreError) {
                 debugPrint('Firestore error: ${firestoreError}');
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -186,9 +184,10 @@ class _SignupPageState extends State<SignupPage> {
                       Text(
                         "Create your Travelon account",
                         style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black),
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
                       ),
                       SizedBox(height: 24),
                       TextFormField(
@@ -197,10 +196,11 @@ class _SignupPageState extends State<SignupPage> {
                           labelText: 'First Name',
                           prefixIcon: Icon(Icons.person),
                         ),
-                        validator: (value) =>
-                            value == null || value.isEmpty
-                                ? 'Enter your first name'
-                                : null,
+                        validator:
+                            (value) =>
+                                value == null || value.isEmpty
+                                    ? 'Enter your first name'
+                                    : null,
                       ),
                       SizedBox(height: 16),
                       TextFormField(
@@ -209,10 +209,11 @@ class _SignupPageState extends State<SignupPage> {
                           labelText: 'Last Name',
                           prefixIcon: Icon(Icons.person_outline),
                         ),
-                        validator: (value) =>
-                            value == null || value.isEmpty
-                                ? 'Enter your last name'
-                                : null,
+                        validator:
+                            (value) =>
+                                value == null || value.isEmpty
+                                    ? 'Enter your last name'
+                                    : null,
                       ),
                       SizedBox(height: 16),
                       TextFormField(
@@ -274,7 +275,9 @@ class _SignupPageState extends State<SignupPage> {
                           if (!value.contains(RegExp(r'[0-9]'))) {
                             return 'Password must contain a number.';
                           }
-                          if (!value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
+                          if (!value.contains(
+                            RegExp(r'[!@#$%^&*(),.?":{}|<>]'),
+                          )) {
                             return 'Password must contain a special character.';
                           }
                           return null;
@@ -291,24 +294,34 @@ class _SignupPageState extends State<SignupPage> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: Text("Sign Up",
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 16)),
+                        child: Text(
+                          "Sign Up",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
                       ),
                       SizedBox(height: 16),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text("Already have an account? ",
-                              style: TextStyle(color: Colors.black54)),
+                          Text(
+                            "Already have an account? ",
+                            style: TextStyle(color: Colors.black54),
+                          ),
                           GestureDetector(
-                            onTap: () =>
-                                Navigator.pushReplacementNamed(context, '/login'),
+                            onTap:
+                                () => Navigator.pushReplacementNamed(
+                                  context,
+                                  '/login',
+                                ),
                             child: Text(
                               "Login",
                               style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black),
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
                             ),
                           ),
                         ],
