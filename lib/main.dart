@@ -29,7 +29,7 @@ class TravelonApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Travelon',
-      theme: ThemeData(primarySwatch: Colors.blue), // Changed from grey
+      theme: ThemeData(primarySwatch: Colors.blue), 
       initialRoute: '/login',
       routes: {
         '/login': (context) => const LoginPage(),

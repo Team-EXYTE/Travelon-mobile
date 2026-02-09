@@ -115,8 +115,8 @@ If you prefer, you can also open the project in Android Studio or VS Code and us
 
 ## Contributors
 
-- [Induwara Rathnayake](https://github.com/InduwaraRathnayake)
 - [Pathumi Ranasinghe](https://github.com/PathumiRanasinghe)
 - [Sanuji Samarakoon](https://github.com/sanujis)
+- [Induwara Rathnayake](https://github.com/InduwaraRathnayake)
 - [Shanthisha Jayathunga](https://github.com/ShanthishaShyamana)
 - [Chehan Dissanayake](https://github.com/nchehan)

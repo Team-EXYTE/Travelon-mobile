@@ -257,6 +257,9 @@ class _OpenStreetMapScreenState extends State<OpenStreetMapScreen> {
                       TileLayer(
                         urlTemplate:
                             'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        userAgentPackageName: 'com.travelon.mobile',
+                        maxZoom: 19,
+                        tileProvider: NetworkTileProvider(),
                       ),
                       MarkerLayer(
                         markers: [
