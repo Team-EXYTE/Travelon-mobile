@@ -13,7 +13,6 @@ Travelon is a modern Flutter app for discovering, sharing, and booking travel ex
 - **Moments Feed**: Share and explore travel moments with images, location, and user overlays.
 - **Event Booking**: Book events, manage tickets, and track your bookings.
 - **Profile Management**: Upload profile images and manage your traveller profile.
-- **Phone Number & OTP**: Sri Lanka (+94) phone formatting, SMS subscription, and OTP verification.
 - **Firestore Integration**: Robust Firestore rules, ticketing, and user booking tracking.
 
 ---
